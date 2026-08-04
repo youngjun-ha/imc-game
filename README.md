@@ -1,7 +1,7 @@
 # imc-game
 Web game about imc's daily life based on html, CSS, Java script
 </br>
-<img src="https://img.shields.io/badge/HTML5-#E34F26?style=flat&logo=HTML5&logoColor=white"/>
+<img src="https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=HTML5&logoColor=white"/>
 설사글 적지 마세요<br/><br/>
 
 <img width="828" height="471" alt="1684829918837" src="https://github.com/user-attachments/assets/48e04b0a-d8cd-4c22-9f34-718ad4a2a360" />
