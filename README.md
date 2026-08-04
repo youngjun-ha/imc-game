@@ -6,7 +6,7 @@ Web game about imc's daily life based on html, CSS, Java script
 
 안녕하세요. 저는 임 "Arrogant" 한빈 입니다. 정말 건방지죠.<br/>
 그런 저를 위협하는 존재가 있다고 들었습니다... 하 "Lovebug" 영준이라고요.<br/>
-가소롭군요... 저를 위협하기 이전에 건방 사천왕부터 처리하셔야겠습니다...<br/>
+가소롭군요... 저를 위협하기 이전에 <b>건방 사천왕</b>부터 처리하셔야겠습니다...<br/>
 <br/>
 친구만든 자, Mr.3 Dongzi<br/>
 비듬쏟는 자, Mr.6 WhiteDust<br/>
