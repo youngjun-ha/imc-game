@@ -1,6 +1,9 @@
 # imc-game
 Web game about imc's daily life based on html, CSS, Java script
-설사글 적지 마세요<br/>
+설사글 적지 마세요<br/><br/>
+
+<img width="828" height="471" alt="1684829918837" src="https://github.com/user-attachments/assets/48e04b0a-d8cd-4c22-9f34-718ad4a2a360" />
+
 안녕하세요. 저는 임 "Arrogant" 한빈 입니다. 정말 건방지죠.<br/>
 그런 저를 위협하는 존재가 있다고 들었습니다... 하 "Lovebug" 영준이라고요.<br/>
 가소롭군요... 저를 위협하기 이전에 건방 사천왕부터 처리하셔야겠습니다...<br/>
