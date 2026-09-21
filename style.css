@@ -106,6 +106,25 @@ canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; 
 }
 .toast.show { opacity: 1; translate: -50% 0; }
 
+.challenge {
+  position: absolute;
+  top: 76px;
+  left: 50%;
+  translate: -50% 0;
+  width: min(430px, 82%);
+  padding: 12px 15px;
+  border: 3px solid #111;
+  outline: 2px solid #f2c14e;
+  background: #171a1def;
+  box-shadow: 0 8px 25px #0009;
+  text-align: center;
+}
+.challenge.hidden { display: none; }
+.challenge strong { color: var(--accent); }
+.challenge p { margin: 5px 0 9px; font-size: 13px; }
+.challenge-track { height: 10px; border: 2px solid #080908; background: #343934; overflow: hidden; }
+.challenge-track span { display: block; width: 0; height: 100%; background: var(--accent); transition: width .08s linear; }
+
 @media (max-width: 680px) {
   body { padding: 0; background: #111; }
   .game-shell { border-width: 0; }
