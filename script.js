@@ -5,7 +5,7 @@ ctx.imageSmoothingEnabled = false;
 const TILE = 32;
 const MAP_W = 70;
 const MAP_H = 45;
-const SAVE_KEY = "imc-neighborhood-save-v2";
+const SAVE_KEY = "imc-neighborhood-save-v3";
 
 const palette = {
   grass: "#7f9b68", grass2: "#738e5f", road: "#777b76", roadLine: "#aaa999",
@@ -34,6 +34,7 @@ const fences = [
   { x: 51, y: 13, w: 17, h: 1 }, { x: 1, y: 28, w: 12, h: 1 },
   { x: 27, y: 28, w: 10, h: 1 }, { x: 52, y: 28, w: 16, h: 1 },
 ];
+const sceneryTrees = [[1,2],[14,5],[28,6],[47,7],[67,4],[3,15],[19,16],[33,15],[51,16],[68,20],[2,31],[16,38],[38,35],[54,31],[69,38]];
 
 const npcs = [
   { id: "shopkeeper", name: "동네 슈퍼 주인", x: 15.5, y: 11.5, color: "#cf7a5f", icon: "슈", lines: ["임씨, 동네를 둘러보러 나온 거야?", "큰길을 따라가면 우편배달부를 만날 수 있을 거야."] },
@@ -44,8 +45,9 @@ const npcs = [
   { id: "kid", name: "공 차는 아이", x: 38.5, y: 28.5, color: "#e1a84d", icon: "공", lines: ["임씨 아저씨, 같이 공 찰래요?", "놀이터 옆 골목으로 가면 지름길이 하나 있어요!"] },
   { id: "manager", name: "동네 관리인", x: 55, y: 42, color: "#5f8e78", icon: "관", requires: "laundry", locked: "동네 안내를 받으려면 주민들과 먼저 인사를 나누고 오세요.", lines: ["임씨, 동네 한 바퀴를 제대로 돌았군요.", "이제 주택가의 길을 익혔습니다. 자유롭게 더 둘러보세요."] },
 ];
+const worldSolids = solidRects();
 
-const player = { x: 8 * TILE, y: 12 * TILE, w: 20, h: 22, speed: 170, facing: "down" };
+const player = { x: 8 * TILE, y: 12 * TILE, w: 20, h: 22, speed: 180, facing: "down" };
 const camera = { x: 0, y: 0 };
 const keys = new Set();
 let met = new Set();
@@ -66,17 +68,58 @@ function rectsOverlap(a, b) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
 
-function blocked(rect) {
-  if (rect.x < 0 || rect.y < 0 || rect.x + rect.w > MAP_W * TILE || rect.y + rect.h > MAP_H * TILE) return true;
-  const solids = [...buildings, ...fences, ...ponds].map(o => ({ x: o.x * TILE, y: o.y * TILE, w: o.w * TILE, h: o.h * TILE }));
-  return solids.some(s => rectsOverlap(rect, s));
+function playerFeetAt(x, y) {
+  return { x: x + 3, y: y + 14, w: player.w - 6, h: 8 };
+}
+
+function solidRects() {
+  const houseRects = buildings.map(b => ({
+    x: b.x * TILE + 2, y: b.y * TILE + 8,
+    w: b.w * TILE - 4, h: b.h * TILE - 8,
+  }));
+  const fenceRects = fences.map(f => ({
+    x: f.x * TILE + 2, y: f.y * TILE + 7,
+    w: f.w * TILE - 4, h: 15,
+  }));
+  const pondRects = ponds.map(p => ({
+    x: p.x * TILE + 3, y: p.y * TILE + 3,
+    w: p.w * TILE - 6, h: p.h * TILE - 6,
+  }));
+  const treeRects = sceneryTrees.map(([x, y]) => ({
+    x: x * TILE + 8, y: y * TILE + 21, w: 16, h: 15,
+  }));
+  const npcRects = npcs.map(n => ({
+    x: n.x * TILE - 8, y: n.y * TILE - 2, w: 16, h: 13,
+  }));
+  return [...houseRects, ...fenceRects, ...pondRects, ...treeRects, ...npcRects];
+}
+
+function blockedAt(x, y) {
+  const feet = playerFeetAt(x, y);
+  if (feet.x < 0 || feet.y < 0 || feet.x + feet.w > MAP_W * TILE || feet.y + feet.h > MAP_H * TILE) return true;
+  return worldSolids.some(solid => rectsOverlap(feet, solid));
+}
+
+function moveAxis(amount, axis) {
+  const direction = Math.sign(amount);
+  let remaining = Math.abs(amount);
+  while (remaining > 0) {
+    const step = Math.min(4, remaining) * direction;
+    const nextX = axis === "x" ? player.x + step : player.x;
+    const nextY = axis === "y" ? player.y + step : player.y;
+    if (blockedAt(nextX, nextY)) break;
+    player[axis] += step;
+    remaining -= Math.abs(step);
+  }
 }
 
 function tryMove(dx, dy) {
-  const nextX = { x: player.x + dx, y: player.y, w: player.w, h: player.h };
-  if (!blocked(nextX)) player.x += dx;
-  const nextY = { x: player.x, y: player.y + dy, w: player.w, h: player.h };
-  if (!blocked(nextY)) player.y += dy;
+  // 축별로 따로 움직이면 모서리에 닿아도 가능한 방향으로 자연스럽게 미끄러진다.
+  if (Math.abs(dx) > Math.abs(dy)) {
+    moveAxis(dx, "x"); moveAxis(dy, "y");
+  } else {
+    moveAxis(dy, "y"); moveAxis(dx, "x");
+  }
 }
 
 function update(dt) {
@@ -127,8 +170,7 @@ function drawScenery() {
     ctx.fillStyle = palette.fence; ctx.fillRect(f.x*TILE-camera.x, f.y*TILE-camera.y+10, f.w*TILE, 9);
     for (let i=0; i<f.w; i++) ctx.fillRect((f.x+i)*TILE-camera.x+4, f.y*TILE-camera.y+3, 6, 24);
   });
-  const trees = [[1,2],[14,5],[28,6],[47,7],[67,4],[3,15],[19,16],[33,15],[51,16],[68,20],[2,31],[16,38],[38,35],[54,31],[69,38]];
-  trees.forEach(([tx,ty]) => {
+  sceneryTrees.forEach(([tx,ty]) => {
     const x=tx*TILE-camera.x, y=ty*TILE-camera.y;
     ctx.fillStyle=palette.trunk; ctx.fillRect(x+12,y+19,8,18);
     ctx.fillStyle=palette.tree; ctx.fillRect(x+3,y+4,26,23); ctx.fillStyle="#527e55"; ctx.fillRect(x+8,y,17,10);
