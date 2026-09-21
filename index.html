@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>임씨의 하루 — 주택가</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="game-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">IMC'S DAY · CHAPTER 1</p>
+          <h1>임씨의 하루</h1>
+        </div>
+        <div class="mission" aria-live="polite">
+          <span>오늘의 목표</span>
+          <strong id="missionText">동네 사람들에게 한빈의 행방을 물어보자.</strong>
+        </div>
+      </header>
+
+      <section class="game-stage" aria-label="주택가 탐험 게임">
+        <canvas id="gameCanvas" width="960" height="576"></canvas>
+
+        <div class="hud hud-left">
+          <div class="hud-label">만난 이웃</div>
+          <div><strong id="metCount">0</strong> / <span id="npcCount">0</span></div>
+        </div>
+
+        <div class="hud hud-right">
+          <div class="hud-label">조작</div>
+          <div>이동 WASD / 방향키</div>
+          <div>대화 E / Space</div>
+        </div>
+
+        <div id="toast" class="toast" aria-live="polite"></div>
+
+        <div id="dialogue" class="dialogue hidden" role="dialog" aria-modal="false">
+          <div class="portrait" id="portrait">?</div>
+          <div class="dialogue-body">
+            <div class="speaker" id="speaker">동네 주민</div>
+            <p id="dialogueText"></p>
+            <button id="nextButton" type="button">다음 <span>Space</span></button>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <span>골목을 샅샅이 돌아다녀 보세요. 모든 길이 정답은 아닙니다.</span>
+        <button id="resetButton" type="button">처음부터</button>
+      </footer>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>

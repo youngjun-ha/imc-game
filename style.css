@@ -1,0 +1,119 @@
+:root {
+  color-scheme: dark;
+  --ink: #f5edda;
+  --muted: #ada591;
+  --panel: #171a1d;
+  --line: #3d423f;
+  --accent: #f2c14e;
+  --green: #92b66f;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 15% 15%, #30372f 0, transparent 30%),
+    linear-gradient(145deg, #111416, #20251f);
+  color: var(--ink);
+  font-family: "Pretendard", "Noto Sans KR", system-ui, sans-serif;
+}
+
+.game-shell {
+  width: min(1120px, 100%);
+  border: 3px solid #090b0c;
+  box-shadow: 0 24px 80px #0009, inset 0 0 0 1px #50574e;
+  background: var(--panel);
+}
+
+.topbar, footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 22px;
+  border-bottom: 2px solid #090b0c;
+}
+
+h1 { margin: 2px 0 0; font-size: clamp(24px, 4vw, 40px); letter-spacing: -.05em; }
+.eyebrow, .hud-label { margin: 0; color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: .18em; }
+.mission { max-width: 55%; text-align: right; }
+.mission span { display: block; color: var(--muted); font-size: 12px; }
+.mission strong { font-size: 14px; }
+
+.game-stage { position: relative; overflow: hidden; background: #111; }
+canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+
+.hud {
+  position: absolute;
+  top: 14px;
+  padding: 9px 12px;
+  border: 2px solid #101210;
+  background: #171a1ddd;
+  box-shadow: 3px 3px 0 #0006;
+  font-size: 12px;
+}
+.hud-left { left: 14px; }
+.hud-right { right: 14px; text-align: right; color: #d6d0c1; }
+
+.dialogue {
+  position: absolute;
+  left: 4%; right: 4%; bottom: 4%;
+  display: flex;
+  gap: 16px;
+  min-height: 128px;
+  padding: 15px;
+  border: 4px solid #111;
+  outline: 2px solid #e9dfc5;
+  background: #191c20f2;
+  box-shadow: 0 12px 35px #000b;
+}
+.dialogue.hidden { display: none; }
+.portrait {
+  flex: 0 0 86px;
+  display: grid;
+  place-items: center;
+  border: 3px solid #111;
+  background: var(--portrait, #a56f54);
+  color: #fff;
+  font-size: 34px;
+  font-weight: 900;
+  text-shadow: 2px 2px #0007;
+}
+.dialogue-body { flex: 1; position: relative; padding-bottom: 34px; }
+.speaker { color: var(--accent); font-weight: 900; }
+.dialogue p { margin: 9px 0; line-height: 1.65; font-size: 15px; }
+.dialogue button {
+  position: absolute; right: 0; bottom: 0;
+  border: 0; padding: 7px 11px;
+  background: var(--accent); color: #171717; font-weight: 900; cursor: pointer;
+}
+.dialogue button span { opacity: .65; font-size: 10px; }
+
+.toast {
+  position: absolute; left: 50%; bottom: 24px;
+  translate: -50% 12px;
+  padding: 8px 13px;
+  background: #111d; border: 1px solid #eee8;
+  opacity: 0; transition: .2s;
+  font-size: 13px; pointer-events: none;
+}
+.toast.show { opacity: 1; translate: -50% 0; }
+
+footer { border-top: 2px solid #3b403b; border-bottom: 0; color: var(--muted); font-size: 12px; }
+footer button { border: 1px solid var(--line); padding: 7px 10px; background: #242925; color: var(--ink); cursor: pointer; }
+
+@media (max-width: 680px) {
+  body { padding: 0; background: #111; }
+  .game-shell { border-width: 0; }
+  .topbar { align-items: flex-start; padding: 12px; }
+  .mission { max-width: 62%; }
+  .hud-right { display: none; }
+  .dialogue { left: 3%; right: 3%; min-height: 115px; }
+  .portrait { flex-basis: 60px; }
+  footer { padding: 10px 12px; }
+}
