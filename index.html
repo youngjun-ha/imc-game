@@ -22,6 +22,27 @@
       <section class="game-stage" aria-label="주택가 탐험 게임">
         <canvas id="gameCanvas" width="960" height="576"></canvas>
 
+        <div id="startScreen" class="game-overlay">
+          <div class="overlay-card">
+            <p class="eyebrow">AM 08:00 · 출근까지 1시간</p>
+            <h2>임씨의 하루</h2>
+            <p>기숙사에서 출발해 방해꾼과 사건을 피해 오전 9시까지 회사에 도착하세요.</p>
+            <label for="playerName">플레이어 이름</label>
+            <input id="playerName" maxlength="12" placeholder="이름을 입력하세요" />
+            <button id="startGameButton" type="button">출근 시작</button>
+          </div>
+        </div>
+
+        <div id="endingScreen" class="game-overlay hidden">
+          <div class="overlay-card">
+            <p class="eyebrow" id="endingLabel">ENDING</p>
+            <h2 id="endingTitle"></h2>
+            <p id="endingText"></p>
+            <div id="endingChoices" class="ending-choices"></div>
+            <button id="restartGameButton" type="button">다시 출근하기</button>
+          </div>
+        </div>
+
         <div class="hud hud-left">
           <div class="hud-label">만난 이웃</div>
           <div><strong id="metCount">0</strong> / <span id="npcCount">0</span></div>
@@ -32,6 +53,8 @@
           <div class="hud-label">조작</div>
           <div>이동 WASD / 방향키</div>
           <div>대화 E / Space</div>
+          <div class="clock" id="gameClock">08:00</div>
+          <div id="conditionText">정상</div>
         </div>
 
         <div id="toast" class="toast" aria-live="polite"></div>
@@ -41,6 +64,8 @@
           <p id="challengeText"></p>
           <div class="challenge-track"><span id="challengeBar"></span></div>
         </div>
+
+        <div id="mentalWords" class="mental-words" aria-hidden="true"></div>
 
         <div id="dialogue" class="dialogue hidden" role="dialog" aria-modal="false">
           <div class="portrait" id="portrait">?</div>

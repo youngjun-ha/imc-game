@@ -4,6 +4,7 @@ ctx.imageSmoothingEnabled = false;
 
 const TILE = 32, MAP_W = 140, MAP_H = 90;
 const SAVE_KEY = "imc-neighborhood-save-v5";
+const RANK_KEY = "imc-commute-ranking-v1", GAME_DURATION = 300;
 const palette = { grass:"#7f9b68",grass2:"#738e5f",road:"#777b76",roadEdge:"#686d68",wall:"#ddd0af",roof:"#9d584c",roof2:"#6d777f",fence:"#6c5745",tree:"#3e6b4b",trunk:"#5c4432",water:"#5d8ca0",accent:"#f2c14e" };
 
 const baseBuildings = [
@@ -20,6 +21,8 @@ const buildings=[...baseBuildings,
   ...baseBuildings.map((b,i)=>({...b,y:b.y+45,name:`${districtNames[1]} ${b.name}`})),
   ...baseBuildings.map((b,i)=>({...b,x:b.x+70,y:b.y+45,name:`${districtNames[2]} ${b.name}`})),
 ];
+const company=buildings[buildings.length-1];
+company.name="IMC 회사"; company.color="#445d78";
 const ponds=[{x:17,y:29,w:7,h:4},{x:87,y:24,w:8,h:5},{x:35,y:69,w:9,h:5},{x:108,y:70,w:7,h:4}];
 const baseFences=[{x:1,y:13,w:12},{x:27,y:13,w:12},{x:54,y:13,w:14},{x:1,y:28,w:10},{x:27,y:28,w:8},{x:55,y:28,w:13}];
 const fences=[...baseFences,...baseFences.map(f=>({...f,x:f.x+70})),...baseFences.map(f=>({...f,y:f.y+45})),...baseFences.map(f=>({...f,x:f.x+70,y:f.y+45}))];
@@ -64,12 +67,28 @@ const events=[
   {id:"sign",mode:"sequence",sequence:["arrowup","arrowright","arrowdown","arrowup","arrowright"],name:"돌아간 파란 표지판",x:105,y:75,icon:"표",color:"#4e82a0",lines:["표지판의 화살표가 제자리를 찾았다.","멀리 떨어진 네 골목의 방향이 하나로 이어졌다!"],reward:"낡은 지도 조각"},
 ];
 
+// 원작 출근길 인물과 위험 요소. 기존 주민 사건과 별개로 길 위에서 작동한다.
+const hazards=[
+  {id:"yang",name:"양씨",x:18,y:13,color:"#d76565",icon:"양",kind:"chase",range:150,cooldown:0},
+  {id:"kang",name:"강씨",x:50,y:27,color:"#795b9a",icon:"강",kind:"mental",range:185,cooldown:0},
+  {id:"seo",name:"서씨",x:38,y:29,color:"#e19042",icon:"서",kind:"race",range:56,cooldown:0},
+  {id:"ha",name:"하씨",x:84,y:29,color:"#a33e4c",icon:"하",kind:"chaseHard",range:175,cooldown:0},
+  {id:"yook",name:"육씨",x:70,y:55,color:"#66804e",icon:"육",kind:"fart",range:0,cooldown:0},
+  {id:"jung",name:"정영현",x:103,y:72,color:"#427e99",icon:"정",kind:"birds",range:190,cooldown:0},
+  {id:"bong",name:"봉씨",x:119,y:77,color:"#8e6e45",icon:"봉",kind:"confuse",range:220,cooldown:0},
+  {id:"villain",name:"수상한 악당",x:55,y:60,color:"#4a3135",icon:"악",kind:"fight",range:54,cooldown:0},
+  {id:"quiz",name:"문제 악당",x:88,y:76,color:"#33434e",icon:"?",kind:"quiz",range:54,cooldown:0},
+];
+const sewers=[{x:28,y:26},{x:99,y:54}], bike={x:20,y:36,taken:false};
+const fartTrails=[],droppings=[];
+
 const player={x:8*TILE,y:12*TILE,w:20,h:26,speed:185,facing:"down",moving:false,walk:0};
 const camera={x:0,y:0},keys=new Set();
 let met=new Set(),startedEvents=new Set(),completedEvents=new Set(),items=new Set();
 let activeEntity=null,challenge=null,dialogueIndex=0,lastTime=performance.now(),toastTimer=0;
+let gameStarted=false,gameEnded=false,elapsed=0,playerName="임씨",stun=0,slow=0,bikeTime=0,confused=0,companyPrompted=false;
 const worldSolids=buildSolidRects();
-const ui={dialogue:document.querySelector("#dialogue"),speaker:document.querySelector("#speaker"),text:document.querySelector("#dialogueText"),portrait:document.querySelector("#portrait"),met:document.querySelector("#metCount"),total:document.querySelector("#npcCount"),eventCount:document.querySelector("#eventCount"),eventTotal:document.querySelector("#eventTotal"),mission:document.querySelector("#missionText"),toast:document.querySelector("#toast"),challenge:document.querySelector("#challenge"),challengeTitle:document.querySelector("#challengeTitle"),challengeText:document.querySelector("#challengeText"),challengeBar:document.querySelector("#challengeBar")};
+const ui={dialogue:document.querySelector("#dialogue"),speaker:document.querySelector("#speaker"),text:document.querySelector("#dialogueText"),portrait:document.querySelector("#portrait"),met:document.querySelector("#metCount"),total:document.querySelector("#npcCount"),eventCount:document.querySelector("#eventCount"),eventTotal:document.querySelector("#eventTotal"),mission:document.querySelector("#missionText"),toast:document.querySelector("#toast"),challenge:document.querySelector("#challenge"),challengeTitle:document.querySelector("#challengeTitle"),challengeText:document.querySelector("#challengeText"),challengeBar:document.querySelector("#challengeBar"),start:document.querySelector("#startScreen"),ending:document.querySelector("#endingScreen"),endingLabel:document.querySelector("#endingLabel"),endingTitle:document.querySelector("#endingTitle"),endingText:document.querySelector("#endingText"),endingChoices:document.querySelector("#endingChoices"),restart:document.querySelector("#restartGameButton"),clock:document.querySelector("#gameClock"),condition:document.querySelector("#conditionText"),mental:document.querySelector("#mentalWords")};
 ui.total.textContent=npcs.length;ui.eventTotal.textContent=events.length;
 
 function rectsOverlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
@@ -109,25 +128,91 @@ function updateCat(dt){
 
 function updateChallenge(dt){
   if(!challenge)return;
-  if(challenge.mode==="mash"){
+  if(challenge.mode==="mash"||challenge.mode==="race"){
     challenge.time-=dt;setChallengeBar(challenge.count/challenge.goal);
-    ui.challengeText.textContent=`E키 연타 ${challenge.count}/${challenge.goal} · 남은 시간 ${Math.max(0,challenge.time).toFixed(1)}초`;
-    if(challenge.time<=0)failChallenge("시간이 지나 처음부터 다시 해야 한다!");
+    const action=challenge.mode==="race"?"← → 번갈아 연타":"E키 연타";
+    ui.challengeText.textContent=`${action} ${challenge.count}/${challenge.goal} · 남은 시간 ${Math.max(0,challenge.time).toFixed(1)}초`;
+    if(challenge.time<=0)completeChallenge(false);
+  }else if(challenge.mode==="escape"){
+    challenge.time-=dt;
+    ui.challengeText.textContent=`사다리 방향 ${challenge.index}/${challenge.sequence.length} · 남은 시간 ${Math.max(0,challenge.time).toFixed(1)}초`;
+    if(challenge.time<=0)completeChallenge(false);
   }else if(challenge.mode==="timing"){
     challenge.phase=(challenge.phase+dt*.72)%1;setChallengeBar(challenge.phase);
     ui.challengeText.textContent=`노란 구간(45~60%)에서 Space · 성공 ${challenge.hits}/${challenge.goal}`;
   }
 }
 
+function actorBlockedAt(x,y){
+  const body={x:x*TILE-8,y:y*TILE-8,w:16,h:16};
+  return x<.5||y<.5||x>MAP_W-.5||y>MAP_H-.5||worldSolids.some(s=>rectsOverlap(body,s));
+}
+function moveActor(h,tx,ty,dt,speed){
+  const dx=tx-h.x*TILE,dy=ty-h.y*TILE,d=Math.hypot(dx,dy)||1,step=speed*dt/TILE;
+  const vx=dx/d*step,vy=dy/d*step;
+  if(!actorBlockedAt(h.x+vx,h.y))h.x+=vx;
+  if(!actorBlockedAt(h.x,h.y+vy))h.y+=vy;
+}
+function popMentalWords(){
+  ["지각","뭐 했지?","퇴근은 멀다","회의","보고서"].forEach((word,i)=>{const s=document.createElement("span");s.textContent=word;s.style.left=`${12+(i*19)%78}%`;s.style.top=`${18+(i*23)%62}%`;s.style.fontSize=`${20+i*3}px`;ui.mental.appendChild(s);setTimeout(()=>s.remove(),1200);});
+}
+function startHazardChallenge(h){
+  h.cooldown=12;
+  if(h.kind==="fight"){
+    challenge={mode:"mash",count:0,goal:28,time:6,title:h.name,onSuccess:()=>showToast("악당을 물리쳤다!"),onFail:()=>showEnding("기절 엔딩","악당과의 싸움에서 져 길바닥에 쓰러졌다.","BAD END")};
+    showChallenge("악당과 전투","6초 안에 E키를 28번 연타!");
+  }else if(h.kind==="race"){
+    challenge={mode:"race",count:0,goal:24,time:7,next:"arrowleft",title:h.name,onSuccess:()=>showToast("서씨와의 달리기 승리!"),onFail:()=>{elapsed+=20;showToast("달리기에 져 4분을 허비했다!");}};
+    showChallenge("서씨의 달리기 시합","← → 방향키를 번갈아 빠르게 누르세요!");
+  }else if(h.kind==="quiz"){
+    challenge={mode:"quiz",answer:"2",title:h.name,onSuccess:()=>showToast("정답! 문제 악당이 길을 비켰다.")};
+    showChallenge("문제 악당에게 붙잡혔다","임씨가 8시에 일어나 9시까지 출근한다. 남은 시간은?  1) 30분  2) 60분  3) 90분");
+  }
+}
+function startSewer(index){
+  const arrows=["arrowup","arrowleft","arrowright","arrowup","arrowdown","arrowright","arrowup"];
+  challenge={mode:"escape",index:0,sequence:arrows,time:10,title:"하수구",onSuccess:()=>{sewers[index].escaped=true;showToast("사다리를 찾아 하수구에서 탈출했다!");},onFail:()=>showEnding("하수구 엔딩","어둠 속에서 사다리를 찾지 못했다.","BAD END")};
+  showChallenge("하수구에 빠졌다!","제한 시간 안에 표시되는 방향 순서를 입력해 사다리를 찾으세요.");
+}
+function updateHazards(dt){
+  const px=player.x+player.w/2,py=player.y+player.h/2;
+  hazards.forEach((h,i)=>{
+    h.cooldown=Math.max(0,h.cooldown-dt);const d=Math.hypot(px-h.x*TILE,py-h.y*TILE);
+    if(["chase","chaseHard","confuse"].includes(h.kind)&&d<h.range)moveActor(h,px,py,dt,h.kind==="chaseHard"?115:78);
+    if(h.kind==="fart"){
+      h.wander=(h.wander||0)+dt;const tx=(70+Math.sin(h.wander*.5)*9)*TILE,ty=(55+Math.cos(h.wander*.35)*7)*TILE;moveActor(h,tx,ty,dt,40);
+      h.drop=(h.drop||0)-dt;if(h.drop<=0){fartTrails.push({x:h.x,y:h.y,time:8});h.drop=1.3;}
+    }
+    if(h.kind==="birds"&&d<h.range){h.drop=(h.drop||0)-dt;if(h.drop<=0){droppings.push({x:px/TILE+(Math.random()-.5)*3,y:py/TILE-5,vy:0});h.drop=.7;}}
+    if(h.cooldown>0)return;
+    if(h.kind==="chase"&&d<30){stun=.7;h.cooldown=8;showToast("양씨가 옆구리를 찔렀다! 잠깐 움직일 수 없다.");}
+    if(h.kind==="chaseHard"&&d<34){stun=1.1;h.cooldown=8;const dx=(px-h.x*TILE)/(d||1),dy=(py-h.y*TILE)/(d||1);tryMove(dx*55,dy*55);showToast("하씨: 뭐하는거야! 3연속 옆구리 공격!");}
+    if(h.kind==="mental"&&d<h.range){slow=3;h.cooldown=10;popMentalWords();showToast("강씨의 말이 시야를 어지럽힌다!");}
+    if(h.kind==="confuse"&&d<35){confused=3;h.cooldown=10;showToast("봉씨 때문에 방향 감각이 뒤집혔다!");}
+    if(["fight","race","quiz"].includes(h.kind)&&d<h.range&&!challenge&&!activeEntity)startHazardChallenge(h);
+  });
+  fartTrails.forEach(t=>t.time-=dt);while(fartTrails[0]&&fartTrails[0].time<=0)fartTrails.shift();
+  droppings.forEach(d=>{d.vy+=18*dt;d.y+=d.vy*dt;if(Math.hypot(px-d.x*TILE,py-d.y*TILE)<25){slow=3;d.hit=true;showToast("새똥을 맞아 발걸음이 느려졌다!");}});for(let i=droppings.length-1;i>=0;i--)if(droppings[i].hit||droppings[i].y>MAP_H)droppings.splice(i,1);
+  sewers.forEach((s,i)=>{if(!s.escaped&&Math.hypot(px-s.x*TILE,py-s.y*TILE)<25&&!challenge&&!activeEntity)startSewer(i);});
+  if(!bike.taken&&Math.hypot(px-bike.x*TILE,py-bike.y*TILE)<30){bike.taken=true;bikeTime=45;showToast("공공자전거 탑승! 45초 동안 이동 속도 상승");}
+}
+
+function updateClock(){const minutes=Math.min(60,Math.floor(elapsed/GAME_DURATION*60));ui.clock.textContent=minutes>=60?"09:00":`08:${String(minutes).padStart(2,"0")}`;ui.condition.textContent=stun>0?"움직임 불가":confused>0?"방향 혼란":slow>0?"느려짐":bikeTime>0?`자전거 ${Math.ceil(bikeTime)}초`:"정상";}
+
 function update(dt){
+  if(!gameStarted||gameEnded)return;
+  elapsed+=dt;stun=Math.max(0,stun-dt);slow=Math.max(0,slow-dt);bikeTime=Math.max(0,bikeTime-dt);confused=Math.max(0,confused-dt);updateClock();
+  if(elapsed>=GAME_DURATION){showEnding("지각 엔딩",`${playerName}은 오전 9시까지 회사에 도착하지 못했다.`,"LATE END");return;}
   let dx=0,dy=0;
-  if(!activeEntity&&!challenge){
+  if(!activeEntity&&!challenge&&stun<=0){
     if(keys.has("arrowleft")||keys.has("a")){dx--;player.facing="left";}if(keys.has("arrowright")||keys.has("d")){dx++;player.facing="right";}
     if(keys.has("arrowup")||keys.has("w")){dy--;player.facing="up";}if(keys.has("arrowdown")||keys.has("s")){dy++;player.facing="down";}
-    if(dx&&dy){dx*=Math.SQRT1_2;dy*=Math.SQRT1_2;}tryMove(dx*player.speed*dt,dy*player.speed*dt);
+    if(confused>0){dx*=-1;dy*=-1;}if(dx&&dy){dx*=Math.SQRT1_2;dy*=Math.SQRT1_2;}const speed=player.speed*(bikeTime>0?1.55:1)*(slow>0?.52:1);tryMove(dx*speed*dt,dy*speed*dt);
   }
   player.moving=Boolean(dx||dy)&&!activeEntity;if(player.moving)player.walk+=dt*11;
-  updateCat(dt);updateChallenge(dt);
+  updateCat(dt);updateChallenge(dt);updateHazards(dt);
+  const entrance={x:(company.x+company.w/2)*TILE,y:(company.y+company.h+1)*TILE};
+  if(!companyPrompted&&Math.hypot(player.x+player.w/2-entrance.x,player.y+player.h/2-entrance.y)<48)showCompanyQuestion();
   const sx=player.x-camera.x,sy=player.y-camera.y;let tx=camera.x,ty=camera.y;
   if(sx<250)tx=player.x-250;else if(sx>710)tx=player.x-710;if(sy<170)ty=player.y-170;else if(sy>390)ty=player.y-390;
   camera.x+=(tx-camera.x)*Math.min(1,dt*9);camera.y+=(ty-camera.y)*Math.min(1,dt*9);
@@ -162,16 +247,30 @@ function drawPlayer(){
   ctx.fillStyle="#292929";if(player.facing==="left"){ctx.fillRect(x-6,y-16,2,2);ctx.fillStyle="#e8c49f";ctx.fillRect(x-13,y-5,4,9);}else if(player.facing==="right"){ctx.fillStyle="#292929";ctx.fillRect(x+4,y-16,2,2);ctx.fillStyle="#e8c49f";ctx.fillRect(x+9,y-5,4,9);}else if(player.facing==="down"){ctx.fillRect(x-4,y-16,2,2);ctx.fillRect(x+3,y-16,2,2);ctx.fillStyle="#e8c49f";ctx.fillRect(x-13,y-4,4,9);ctx.fillRect(x+9,y-4,4,9);}else{ctx.fillStyle="#222";ctx.fillRect(x-7,y-21,14,8);}ctx.fillStyle="#fff";ctx.font="bold 8px sans-serif";ctx.textAlign="center";ctx.fillText("임",x,y+3);ctx.textAlign="left";
 }
 
+function drawCommuteHazards(){
+  fartTrails.forEach(t=>{ctx.fillStyle=`rgba(112,91,45,${Math.min(.55,t.time/8)})`;ctx.fillRect(t.x*TILE-camera.x-15,t.y*TILE-camera.y-9,30,18);});
+  sewers.forEach(s=>{const x=s.x*TILE-camera.x,y=s.y*TILE-camera.y;ctx.fillStyle="#282d2e";ctx.fillRect(x-13,y-8,26,16);ctx.strokeStyle="#596164";ctx.lineWidth=2;for(let i=-8;i<=8;i+=5){ctx.beginPath();ctx.moveTo(x+i,y-7);ctx.lineTo(x+i,y+7);ctx.stroke();}});
+  if(!bike.taken){const x=bike.x*TILE-camera.x,y=bike.y*TILE-camera.y;ctx.strokeStyle="#72c8d5";ctx.lineWidth=3;ctx.beginPath();ctx.arc(x-8,y+6,7,0,Math.PI*2);ctx.arc(x+9,y+6,7,0,Math.PI*2);ctx.moveTo(x-8,y+6);ctx.lineTo(x,y-6);ctx.lineTo(x+9,y+6);ctx.stroke();}
+  droppings.forEach(d=>{ctx.fillStyle="#f2f0dc";ctx.fillRect(d.x*TILE-camera.x-3,d.y*TILE-camera.y-3,6,7);});
+  hazards.forEach(h=>{drawBaseCharacter(h.x*TILE,h.y*TILE,h.color,h.icon,false);const x=h.x*TILE-camera.x,y=h.y*TILE-camera.y;ctx.fillStyle="#171917cc";ctx.fillRect(x-24,y+14,48,13);ctx.fillStyle="#f4e8cf";ctx.font="bold 9px sans-serif";ctx.textAlign="center";ctx.fillText(h.name,x,y+24);ctx.textAlign="left";});
+  const ex=(company.x+company.w/2)*TILE-camera.x,ey=(company.y+company.h+1)*TILE-camera.y;ctx.fillStyle="#f2c14e";ctx.fillRect(ex-16,ey-4,32,8);ctx.fillStyle="#171717";ctx.font="bold 10px sans-serif";ctx.textAlign="center";ctx.fillText("회사",ex,ey+19);ctx.textAlign="left";
+}
+
 function eventIsActive(e){return startedEvents.has(e.id)&&!completedEvents.has(e.id);}
 function drawEvents(){events.forEach(e=>{if(e.id==="cat"&&!eventIsActive(e))return;const x=e.x*TILE-camera.x,y=e.y*TILE-camera.y,active=eventIsActive(e);if(e.id.startsWith("lamp")){ctx.fillStyle="#454545";ctx.fillRect(x-3,y-20,6,31);ctx.fillRect(x-8,y-22,16,4);ctx.fillStyle=completedEvents.has(e.id)?"#ffe58a":"#8b805a";ctx.fillRect(x-6,y-19,12,9);}else if(e.id.startsWith("parcel")){ctx.fillStyle=e.color;ctx.fillRect(x-9,y-12,18,19);ctx.fillStyle="#dbe3d8";ctx.fillRect(x-6,y-8,12,4);ctx.fillStyle="#4d4b40";ctx.fillRect(x-2,y+7,4,10);}else if(e.id==="cat"){ctx.fillStyle="#a98661";ctx.fillRect(x-9,y-8,18,12);ctx.fillStyle="#ede2c3";ctx.fillRect(x-6,y-15,12,9);ctx.fillStyle="#333";ctx.fillRect(x-3,y-13,2,2);ctx.fillRect(x+3,y-13,2,2);}else{ctx.fillStyle=e.color;ctx.fillRect(x-11,y-13,22,22);ctx.fillStyle="#171917";ctx.font="bold 9px sans-serif";ctx.textAlign="center";ctx.fillText(e.icon,x,y+1);ctx.textAlign="left";}if(active){ctx.fillStyle=palette.accent;ctx.font="bold 15px sans-serif";ctx.textAlign="center";ctx.fillText("!",x,y-30);ctx.textAlign="left";}});}
 function nearbyNpc(){return npcs.find(n=>Math.hypot(player.x+player.w/2-n.x*TILE,player.y+player.h/2-n.y*TILE)<54);}
 function nearbyEvent(){return events.find(e=>eventIsActive(e)&&Math.hypot(player.x+player.w/2-e.x*TILE,player.y+player.h/2-e.y*TILE)<52);}
 function drawPrompt(target,label){const x=target.x*TILE-camera.x,y=target.y*TILE-camera.y-42;ctx.fillStyle="#151719e8";ctx.fillRect(x-34,y-12,68,22);ctx.fillStyle="#f6e8bd";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.fillText(`E  ${label}`,x,y+3);ctx.textAlign="left";}
-function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);drawGround();drawScenery();buildings.forEach(drawBuilding);drawEvents();npcs.forEach(drawNpc);drawPlayer();if(!activeEntity&&!challenge){const event=nearbyEvent(),npc=nearbyNpc();if(event)drawPrompt(event,event.mode==="chase"?"잡기":"조사");else if(npc)drawPrompt(npc,"대화");}}
+function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);drawGround();drawScenery();buildings.forEach(drawBuilding);drawEvents();drawCommuteHazards();npcs.forEach(drawNpc);drawPlayer();if(gameStarted&&!gameEnded&&!activeEntity&&!challenge){const event=nearbyEvent(),npc=nearbyNpc();if(event)drawPrompt(event,event.mode==="chase"?"잡기":"조사");else if(npc)drawPrompt(npc,"대화");}}
 
 function setChallengeBar(value){ui.challengeBar.style.width=`${Math.max(0,Math.min(1,value))*100}%`;}
 function showChallenge(title,text){ui.challenge.classList.remove("hidden");ui.challengeTitle.textContent=title;ui.challengeText.textContent=text;setChallengeBar(0);}
 function hideChallenge(){ui.challenge.classList.add("hidden");setChallengeBar(0);}
+function completeChallenge(success){
+  const current=challenge;if(!current)return;challenge=null;hideChallenge();
+  if(success){if(current.event)finishEvent(current.event);else current.onSuccess?.();}
+  else if(current.onFail)current.onFail();else showToast("시간이 지나 처음부터 다시 해야 한다!");
+}
 function finishEvent(event){challenge=null;hideChallenge();completedEvents.add(event.id);items.add(event.reward);openDialogue(event,event.lines);showToast(`${event.reward} 획득`);}
 function failChallenge(message){challenge=null;hideChallenge();showToast(message);}
 function startChallenge(event){
@@ -193,19 +292,30 @@ function startChallenge(event){
 function handleChallengeKey(key,repeat){
   if(!challenge||repeat)return;
   if(challenge.mode==="mash"&&key==="e"){
-    challenge.count++;if(challenge.count>=challenge.goal)finishEvent(challenge.event);return;
+    challenge.count++;if(challenge.count>=challenge.goal)completeChallenge(true);return;
+  }
+  if(challenge.mode==="race"&&(key==="arrowleft"||key==="arrowright")){
+    if(key===challenge.next){challenge.count++;challenge.next=key==="arrowleft"?"arrowright":"arrowleft";}else challenge.count=Math.max(0,challenge.count-1);
+    if(challenge.count>=challenge.goal)completeChallenge(true);return;
+  }
+  if(challenge.mode==="escape"&&key.startsWith("arrow")){
+    if(key===challenge.sequence[challenge.index])challenge.index++;else{challenge.index=0;showToast("막다른 길! 처음 방향부터 다시.");}
+    setChallengeBar(challenge.index/challenge.sequence.length);if(challenge.index>=challenge.sequence.length)completeChallenge(true);return;
+  }
+  if(challenge.mode==="quiz"&&["1","2","3"].includes(key)){
+    if(key===challenge.answer)completeChallenge(true);else{elapsed+=10;showToast("오답! 정답을 맞힐 때까지 놓아주지 않는다.");}return;
   }
   if(challenge.mode==="sequence"&&key.startsWith("arrow")){
     if(key===challenge.sequence[challenge.index])challenge.index++;
     else{challenge.index=0;showToast("순서가 틀려 처음부터!");}
     setChallengeBar(challenge.index/challenge.sequence.length);
     ui.challengeText.textContent=`방향 입력 ${challenge.index}/${challenge.sequence.length}`;
-    if(challenge.index>=challenge.sequence.length)finishEvent(challenge.event);return;
+    if(challenge.index>=challenge.sequence.length)completeChallenge(true);return;
   }
   if(challenge.mode==="timing"&&key===" "){
     if(challenge.phase>=.45&&challenge.phase<=.60){challenge.hits++;showToast("정확한 박자!");}
     else{challenge.hits=0;showToast("박자를 놓쳐 연속 성공 초기화!");}
-    if(challenge.hits>=challenge.goal)finishEvent(challenge.event);
+    if(challenge.hits>=challenge.goal)completeChallenge(true);
   }
 }
 
@@ -224,12 +334,35 @@ function interact(){const event=nearbyEvent();if(event){startChallenge(event);re
 function renderDialogue(){const lines=activeEntity.currentLines;if(dialogueIndex>=lines.length){closeDialogue();return;}ui.dialogue.classList.remove("hidden");ui.speaker.textContent=activeEntity.name;ui.text.textContent=lines[dialogueIndex];ui.portrait.textContent=activeEntity.icon;ui.portrait.style.setProperty("--portrait",activeEntity.color);}
 function nextDialogue(){if(!activeEntity)return;dialogueIndex++;renderDialogue();}
 function closeDialogue(){activeEntity=null;ui.dialogue.classList.add("hidden");updateProgress();save();}
-function updateProgress(){ui.met.textContent=met.size;ui.eventCount.textContent=completedEvents.size;if(completedEvents.size===events.length){ui.mission.textContent=items.has("골목 이야기")?"일곱 사건을 해결해 골목의 이야기를 완성했다.":"바람 언덕에서 시인 윤을 만나자.";return;}const active=events.find(e=>eventIsActive(e));if(active){ui.mission.textContent=`사건 조사: ${active.name} (${completedEvents.size}/${events.length})`;return;}ui.mission.textContent=`네 구역의 주민을 만나 사건을 찾아보자. (${completedEvents.size}/${events.length})`;}
+function updateProgress(){ui.met.textContent=met.size;ui.eventCount.textContent=completedEvents.size;const active=events.find(e=>eventIsActive(e));if(active){ui.mission.textContent=`9시 전 회사 도착 · 선택 사건: ${active.name} (${completedEvents.size}/${events.length})`;return;}ui.mission.textContent=`9시 전 회사 도착 · 골목 사건 ${completedEvents.size}/${events.length}`;}
 function showToast(message){ui.toast.textContent=message;ui.toast.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>ui.toast.classList.remove("show"),1400);}
 function save(){localStorage.setItem(SAVE_KEY,JSON.stringify({x:player.x,y:player.y,met:[...met],started:[...startedEvents],completed:[...completedEvents],items:[...items]}));}
 function load(){try{const d=JSON.parse(localStorage.getItem(SAVE_KEY));if(!d)return;player.x=d.x;player.y=d.y;met=new Set(d.met||[]);startedEvents=new Set(d.started||[]);completedEvents=new Set(d.completed||[]);items=new Set(d.items||[]);if(blockedAt(player.x,player.y)){player.x=8*TILE;player.y=12*TILE;}}catch{}}
 
-addEventListener("keydown",e=>{const key=e.key.toLowerCase();if(["arrowup","arrowdown","arrowleft","arrowright"," "].includes(key))e.preventDefault();if(challenge){handleChallengeKey(key,e.repeat);return;}if((key==="e"||key===" ")&&!e.repeat)activeEntity?nextDialogue():interact();keys.add(key);});
+function rankingText(){
+  try{const ranks=JSON.parse(localStorage.getItem(RANK_KEY)||"[]");if(!ranks.length)return"";return`\n\n빠른 출근 기록\n${ranks.slice(0,5).map((r,i)=>`${i+1}. ${r.name} · ${Math.floor(r.time/60)}분 ${Math.floor(r.time%60)}초`).join("\n")}`;}catch{return"";}
+}
+function recordRanking(){
+  try{const ranks=JSON.parse(localStorage.getItem(RANK_KEY)||"[]");ranks.push({name:playerName,time:elapsed});ranks.sort((a,b)=>a.time-b.time);localStorage.setItem(RANK_KEY,JSON.stringify(ranks.slice(0,20)));}catch{}
+}
+function showEnding(title,text,label="ENDING",clear=false){
+  gameEnded=true;keys.clear();challenge=null;hideChallenge();ui.ending.classList.remove("hidden");ui.endingLabel.textContent=label;ui.endingTitle.textContent=title;if(clear)recordRanking();ui.endingText.textContent=text+(clear?rankingText():"");ui.endingText.style.whiteSpace="pre-line";ui.endingChoices.replaceChildren();ui.restart.style.display="inline-block";
+}
+function showCompanyQuestion(){
+  companyPrompted=true;gameEnded=true;keys.clear();ui.ending.classList.remove("hidden");ui.endingLabel.textContent="AM 08:"+String(Math.min(59,Math.floor(elapsed/GAME_DURATION*60))).padStart(2,"0");ui.endingTitle.textContent="회사 도착 — 마지막 질문";ui.endingText.textContent="상사가 ‘지금 가장 먼저 할 일은?’이라고 묻는다. 임씨라면 뭐라고 답할까?";ui.endingChoices.replaceChildren();ui.restart.style.display="none";
+  [
+    ["출근했습니다. 일단 커피부터 마시겠습니다.",true],
+    ["오늘은 집에서 일한 것으로 해주세요.",false],
+    ["회의는 내일의 제가 하겠습니다.",false],
+    ["방금 길에서 고양이와 면담했습니다.",false],
+  ].forEach(([text,correct])=>{const b=document.createElement("button");b.textContent=text;b.addEventListener("click",()=>correct?showEnding("출근 성공!",`${playerName}은 무사히 도착해 임씨다운 대답으로 하루를 시작했다.`,"CLEAR",true):showEnding("해고 엔딩",`${playerName}은 회사에는 도착했지만 수상한 대답 때문에 바로 돌려보내졌다.`,"BAD END"));ui.endingChoices.appendChild(b);});
+}
+function startGame(){
+  const entered=document.querySelector("#playerName").value.trim();playerName=entered||"임씨";player.x=8*TILE;player.y=12*TILE;elapsed=0;stun=slow=bikeTime=confused=0;bike.taken=false;companyPrompted=false;gameEnded=false;gameStarted=true;ui.start.classList.add("hidden");ui.ending.classList.add("hidden");updateClock();updateProgress();showToast(`${playerName}, 오전 9시까지 회사로 출발!`);
+}
+
+addEventListener("keydown",e=>{const key=e.key.toLowerCase();if(["arrowup","arrowdown","arrowleft","arrowright"," "].includes(key))e.preventDefault();if(challenge){handleChallengeKey(key,e.repeat);return;}if(!gameStarted||gameEnded)return;if((key==="e"||key===" ")&&!e.repeat)activeEntity?nextDialogue():interact();keys.add(key);});
 addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));document.querySelector("#nextButton").addEventListener("click",nextDialogue);addEventListener("beforeunload",save);
-load();updateProgress();
+document.querySelector("#startGameButton").addEventListener("click",startGame);document.querySelector("#playerName").addEventListener("keydown",e=>{if(e.key==="Enter")startGame();});ui.restart.addEventListener("click",()=>location.reload());
+load();updateProgress();updateClock();
 function loop(now){const dt=Math.min((now-lastTime)/1000,.05);lastTime=now;update(dt);draw();requestAnimationFrame(loop);}requestAnimationFrame(loop);

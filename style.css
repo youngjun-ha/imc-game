@@ -125,6 +125,31 @@ canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; 
 .challenge-track { height: 10px; border: 2px solid #080908; background: #343934; overflow: hidden; }
 .challenge-track span { display: block; width: 0; height: 100%; background: var(--accent); transition: width .08s linear; }
 
+.game-overlay {
+  position: absolute; inset: 0; z-index: 20;
+  display: grid; place-items: center;
+  padding: 24px; background: #111b;
+  backdrop-filter: blur(4px);
+}
+.game-overlay.hidden { display: none; }
+.overlay-card {
+  width: min(520px, 94%); padding: 28px;
+  border: 4px solid #0b0c0c; outline: 2px solid #e9dfc5;
+  background: #1a1e20; box-shadow: 0 18px 55px #000b;
+  text-align: center;
+}
+.overlay-card h2 { margin: 7px 0 10px; font-size: 34px; }
+.overlay-card p { color: #d2cbbb; line-height: 1.6; }
+.overlay-card label { display: block; margin: 18px 0 6px; color: var(--accent); font-size: 12px; font-weight: 800; }
+.overlay-card input { width: 100%; padding: 12px; border: 2px solid #050606; background: #eee7d6; color: #171717; font: inherit; text-align: center; }
+.overlay-card button { margin-top: 14px; padding: 11px 18px; border: 0; background: var(--accent); color: #171717; font-weight: 900; cursor: pointer; }
+.ending-choices { display: grid; gap: 8px; margin-top: 15px; }
+.ending-choices button { margin: 0; background: #343b38; color: var(--ink); border: 1px solid #626a62; }
+.clock { margin-top: 7px; color: var(--accent); font-size: 20px; font-weight: 900; letter-spacing: .08em; }
+.mental-words { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 8; }
+.mental-words span { position: absolute; color: #ffdb62; font-weight: 1000; text-shadow: 2px 2px #000; animation: wordPop 1.1s ease-out forwards; }
+@keyframes wordPop { from { opacity: 0; scale: .6; } 25% { opacity: 1; } to { opacity: 0; scale: 1.35; } }
+
 @media (max-width: 680px) {
   body { padding: 0; background: #111; }
   .game-shell { border-width: 0; }
