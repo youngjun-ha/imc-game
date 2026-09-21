@@ -38,31 +38,30 @@ const roadPaths=[
 const hills=[{x:39,y:38,r:6},{x:66,y:16,r:5},{x:103,y:38,r:8},{x:64,y:67,r:7},{x:128,y:63,r:9},{x:100,y:82,r:6}];
 
 const npcs=[
-  {id:"junk",name:"태엽 고물상 춘배",x:15.5,y:11.5,color:"#bb6b4f",icon:"춘",style:"wrench",event:"lamp",intro:["임씨! 마침 잘 왔어. 골목 가로등이 낮에도 깜빡거린다니까.","북쪽 골목 끝의 가로등을 한 번 두드려 봐. 기계는 정직한 충격에 답하거든!"],reminder:["깜빡이는 가로등은 북쪽 담장 아래에 있어. 살살 두드려야 해!"],thanks:["오, 불빛이 안정됐군! 역시 내 진단과 임씨의 손맛은 완벽해."]},
+  {id:"junk",name:"태엽 고물상 춘배",x:15.5,y:11.5,color:"#bb6b4f",icon:"춘",style:"wrench",events:["lamp","lamp2","lamp3"],intro:["임씨! 마침 잘 왔어. 네 구역의 가로등 세 개가 동시에 말썽이야.","가까운 북쪽 골목부터 먼 아랫마을 언덕까지 모두 찾아서 전선을 단단히 고정해 줘!"],reminder:["고장 난 가로등은 모두 세 개야. 지도 끝쪽 골목과 언덕도 빠뜨리지 마!"],thanks:["세 가로등이 전부 안정됐군! 이제 밤에도 네 구역을 안전하게 다닐 수 있겠어."]},
   {id:"detective",name:"골목 탐정 미미",x:43.5,y:11.5,color:"#75639b",icon:"미",style:"detective",event:"cat",intro:["쉿, 임씨. 지금부터 극비 수사야.","연립주택의 줄무늬 고양이가 사라졌어. 동쪽 언덕 근처에서 방울 소리가 났지."],reminder:["수사 원칙 제1조. 고양이는 사람이 잘 안 가는 풀숲을 좋아한다."],thanks:["사건 해결! 임씨는 오늘부터 명예 골목 탐정이야."]},
-  {id:"courier",name:"졸린 택배기사 만수",x:52.5,y:27,color:"#d39b43",icon:"택",style:"parcel",event:"parcel",intro:["임씨... 딱 3분만 자려다가 30분이 지났네.","바람 언덕 아래 우체통에 이 작은 소포 좀 넣어줄래? 난 여기서 눈을... 아니, 짐을 지킬게."],reminder:["소포는 남동쪽 바람 언덕 아래의 초록 우체통이야. 난 안 자고 있어... 정말이야."],thanks:["배달 완료 확인! 임씨 덕분에 오늘도 지각은 아니고... 약간의 시간차 배달이야."]},
+  {id:"courier",name:"졸린 택배기사 만수",x:52.5,y:27,color:"#d39b43",icon:"택",style:"parcel",events:["parcel","parcel2","parcel3"],intro:["임씨... 오늘 배달지가 지도의 세 끝에 흩어져 있네.","시장골목, 윗마을 끝, 아랫마을 언덕의 우체통에 소포를 하나씩 넣어줘. 난 짐을 지키며 안 자고 있을게."],reminder:["우체통은 모두 세 곳이야. 서로 아주 멀리 떨어져 있으니 굽은 큰길을 따라가 봐."],thanks:["세 곳 모두 배달 완료! 임씨 덕분에 오늘도 지각이 아니라 장거리 특별 배송이 됐어."]},
   {id:"dj",name:"심야 DJ 단비",x:25.5,y:31.5,color:"#477ca3",icon:"DJ",style:"headphone",lines:["낮에는 라디오가 쉬는 시간인데, 임씨한테만 한 곡 틀어줄게.","골목의 소리를 잘 들어봐. 사건이 있는 곳은 평소와 다른 소리가 나거든."]},
   {id:"fortune",name:"거꾸로 점쟁이 복례",x:8.5,y:30.5,color:"#a85e8e",icon:"점",style:"shawl",lines:["임씨, 오늘 운세는 '길을 잃어야 길을 찾는다'야.","동쪽에서 고양이 방울, 북쪽에서 전기 소리, 남쪽에서 코 고는 소리가 들리는구나."]},
   {id:"artist",name:"벽화 화가 솔",x:38.5,y:28.5,color:"#4f9b78",icon:"솔",style:"beret",lines:["임씨가 지나간 자리는 이상하게 파란색으로 그리고 싶어져.","언덕의 굽은 길이 마음에 들어. 곧 담장 전체를 지도처럼 칠할 거야."]},
-  {id:"poet",name:"언덕 시인 윤",x:55,y:42,color:"#657b66",icon:"윤",style:"scarf",final:true,locked:["아직 골목의 이야기가 충분히 모이지 않았군요.","네 구역에 흩어진 일곱 사건을 해결하고 다시 오세요."],lines:["임씨가 해결한 일곱 사건이 오늘 골목의 이야기가 되었군요.","꼬불꼬불한 길은 더 많은 사람을 만나기 위해 있는지도 몰라요."]},
+  {id:"poet",name:"언덕 시인 윤",x:55,y:42,color:"#657b66",icon:"윤",style:"scarf",final:true,locked:["아직 골목의 이야기가 충분히 모이지 않았군요.","네 구역에 흩어진 모든 사건을 해결하고 다시 오세요."],lines:["임씨가 해결한 사건들이 오늘 골목의 이야기가 되었군요.","꼬불꼬불한 길은 더 많은 사람을 만나기 위해 있는지도 몰라요."]},
   {id:"gardener",name:"성급한 정원사 초록",x:91,y:14,color:"#60965d",icon:"초",style:"shawl",event:"weeds",intro:["임씨, 윗마을 화단의 덩굴이 돌계단을 삼키고 있어!","뿌리가 질겨서 한 번에 뽑히지 않아. 힘껏 여러 번 잡아당겨 줘."],reminder:["윗마을 동쪽 연못 위쪽의 덩굴이야. 손에 힘 꽉 줘!"],thanks:["돌계단이 다시 보인다! 임씨 손이 작은 굴착기보다 낫네."]},
   {id:"clock",name:"방향치 시계공 시우",x:118,y:31,color:"#8d6d45",icon:"시",style:"wrench",event:"clock",intro:["시계는 고쳤는데 동서남북 바늘이 제멋대로야.","내가 적어둔 방향 순서를 보고 그대로 입력해 줘. 한 번 틀리면 처음부터야."],reminder:["시계탑은 윗마을 남쪽 굽은 길에 있어. 방향을 차례대로 기억해."],thanks:["모든 바늘이 정각을 가리켜! 방향치인 건 나고, 시계는 멀쩡해졌군."]},
   {id:"coach",name:"박자 교관 박씨",x:30,y:59,color:"#a94f4f",icon:"박",style:"beret",event:"bell",intro:["임씨, 시장 종은 힘이 아니라 박자야.","움직이는 눈금이 노란 구간에 들어올 때 스페이스를 세 번 눌러 봐."],reminder:["시장골목 중앙 종탑에서 정확한 박자를 세 번 맞춰야 해."],thanks:["좋아! 이 정도 박자면 온 동네가 같은 시간에 점심을 먹겠어."]},
   {id:"collector",name:"표지판 수집가 별",x:96,y:70,color:"#4e82a0",icon:"별",style:"headphone",event:"sign",intro:["아랫마을 표지판 하나가 바람에 돌아가 버렸어.","표지판의 화살표를 북쪽, 동쪽, 남쪽 순서로 맞춰 줘."],reminder:["아랫마을 연못 아래의 파란 표지판이야. 방향 세 개를 순서대로!"],thanks:["완벽해. 이제 길을 잃는 사람은... 아마 조금 줄어들 거야."]},
 ];
 const events=[
-  {id:"lamp",mode:"mash",goal:14,name:"깜빡이는 가로등",x:29.5,y:14.6,icon:"!",color:"#f0cc55",lines:["임씨가 접촉 불량 전선을 단단히 고정했다.","지직거리던 불빛이 따뜻한 노란빛으로 안정됐다!"],reward:"유리 전구 조각"},
+  {id:"lamp",mode:"mash",goal:16,name:"첫 번째 깜빡이는 가로등",x:29.5,y:14.6,icon:"!",color:"#f0cc55",lines:["첫 번째 가로등의 접촉 불량 전선을 단단히 고정했다.","지직거리던 불빛이 따뜻한 노란빛으로 안정됐다!"],reward:"첫 번째 전구 조각"},
+  {id:"lamp2",mode:"mash",goal:20,name:"두 번째 흔들리는 가로등",x:105,y:45,icon:"!",color:"#e8bc4a",lines:["두 번째 가로등의 느슨한 나사를 여러 번 조였다.","멀리 떨어진 윗마을 골목이 환해졌다!"],reward:"두 번째 전구 조각"},
+  {id:"lamp3",mode:"mash",goal:24,name:"세 번째 꺼진 가로등",x:132,y:88,icon:"!",color:"#dca83b",lines:["마지막 가로등의 굳은 스위치를 끝까지 밀어 올렸다.","아랫마을 언덕 끝까지 불빛이 이어졌다!"],reward:"세 번째 전구 조각"},
   {id:"cat",mode:"chase",name:"도망치는 줄무늬 고양이",x:66.2,y:15.8,icon:"냥",color:"#d5b486",lines:["한참을 쫓아간 끝에 고양이가 숨을 고른다.","임씨가 조심스럽게 손을 내밀자 방울 달린 목걸이를 보여준다!"],reward:"고양이 방울"},
-  {id:"parcel",mode:"deliver",name:"바람 언덕 우체통",x:56.3,y:31.2,icon:"〒",color:"#4e8b65",lines:["긴 골목길 끝에서 마침내 초록 우체통을 찾았다.","소포를 넣자 멀리서 택배기사의 안도하는 코 고는 소리가 들렸다."],reward:"수취 확인 도장"},
+  {id:"parcel",mode:"deliver",name:"시장골목 초록 우체통",x:20,y:82,icon:"〒",color:"#4e8b65",lines:["시장골목 끝의 초록 우체통에 첫 소포를 넣었다.","아직 두 곳의 먼 배달지가 남아 있다."],reward:"시장골목 수취 도장"},
+  {id:"parcel2",mode:"deliver",name:"윗마을 파란 우체통",x:118,y:12,icon:"〒",color:"#477c87",lines:["윗마을 끝의 파란 우체통에 두 번째 소포를 넣었다.","이제 아랫마을 언덕의 마지막 배달지만 남았다."],reward:"윗마을 수취 도장"},
+  {id:"parcel3",mode:"deliver",name:"아랫마을 붉은 우체통",x:126,y:76,icon:"〒",color:"#91554d",lines:["아랫마을 언덕의 붉은 우체통에 마지막 소포를 넣었다.","세 구역을 가로지른 장거리 배달이 모두 끝났다!"],reward:"아랫마을 수취 도장"},
   {id:"weeds",mode:"mash",goal:20,name:"돌계단의 질긴 덩굴",x:101,y:18,icon:"풀",color:"#4c8b55",lines:["임씨가 마지막 덩굴 뿌리까지 힘껏 뽑아냈다.","가려져 있던 오래된 돌계단이 모습을 드러냈다!"],reward:"향긋한 풀잎"},
   {id:"clock",mode:"sequence",sequence:["arrowup","arrowright","arrowdown","arrowleft","arrowup"],name:"방향 잃은 시계탑",x:110,y:43,icon:"시",color:"#9a7748",lines:["마지막 방향키를 맞추자 네 개의 바늘이 동시에 움직였다.","시계탑이 정확한 종을 울리기 시작했다!"],reward:"작은 태엽"},
   {id:"bell",mode:"timing",goal:3,name:"시장골목 박자 종",x:38,y:58,icon:"종",color:"#b75d4e",lines:["세 번째 정확한 타격과 함께 맑은 종소리가 골목에 퍼졌다.","시장 사람들이 박수를 보낸다!"],reward:"황동 종조각"},
   {id:"sign",mode:"sequence",sequence:["arrowup","arrowright","arrowdown","arrowup","arrowright"],name:"돌아간 파란 표지판",x:105,y:75,icon:"표",color:"#4e82a0",lines:["표지판의 화살표가 제자리를 찾았다.","멀리 떨어진 네 골목의 방향이 하나로 이어졌다!"],reward:"낡은 지도 조각"},
-];
-
-const disruptors=[
-  {id:"kang",name:"강씨",x:72,y:43,color:"#9d4c45",icon:"강",speed:70,route:[[72,43],[80,48],[73,54],[66,47]],routeIndex:1,cooldown:0},
-  {id:"ha",name:"하씨",x:112,y:58,color:"#525b91",icon:"하",speed:82,route:[[112,58],[125,66],[115,80],[101,69]],routeIndex:1,cooldown:0},
 ];
 
 const player={x:8*TILE,y:12*TILE,w:20,h:26,speed:185,facing:"down",moving:false,walk:0};
@@ -91,30 +90,21 @@ function blockedAt(x,y){
 function moveAxis(amount,axis){const dir=Math.sign(amount);let left=Math.abs(amount);while(left>0){const step=Math.min(4,left)*dir,nx=axis==="x"?player.x+step:player.x,ny=axis==="y"?player.y+step:player.y;if(blockedAt(nx,ny))break;player[axis]+=step;left-=Math.abs(step);}}
 function tryMove(dx,dy){if(Math.abs(dx)>Math.abs(dy)){moveAxis(dx,"x");moveAxis(dy,"y");}else{moveAxis(dy,"y");moveAxis(dx,"x");}}
 
-function updateDisruptors(dt){
-  disruptors.forEach(d=>{
-    d.cooldown=Math.max(0,d.cooldown-dt);
-    const target=d.route[d.routeIndex],tx=target[0]*TILE,ty=target[1]*TILE,dx=tx-d.x*TILE,dy=ty-d.y*TILE,dist=Math.hypot(dx,dy);
-    if(dist<5)d.routeIndex=(d.routeIndex+1)%d.route.length;
-    else{d.x+=dx/dist*d.speed*dt/TILE;d.y+=dy/dist*d.speed*dt/TILE;}
-    const px=player.x+player.w/2,py=player.y+player.h/2,ddx=px-d.x*TILE,ddy=py-d.y*TILE,pd=Math.hypot(ddx,ddy);
-    if(pd<28&&d.cooldown===0){
-      const nx=player.x+(ddx/(pd||1))*46,ny=player.y+(ddy/(pd||1))*46;
-      if(!blockedAt(nx,player.y))player.x=nx;if(!blockedAt(player.x,ny))player.y=ny;
-      d.cooldown=2.2;showToast(`${d.name}가 길을 막아 돌아가게 만들었다!`);
-    }
-  });
+function catBlockedAt(x,y){
+  const body={x:x*TILE-8,y:y*TILE-9,w:16,h:15};
+  if(body.x<8||body.y<8||body.x+body.w>MAP_W*TILE-8||body.y+body.h>MAP_H*TILE-8)return true;
+  return worldSolids.some(s=>rectsOverlap(body,s));
 }
-
-const catRoute=[[66.2,15.8],[69,22],[63,27],[72,31],[78,25],[75,16]];
-let catRouteIndex=1;
 function updateCat(dt){
   const cat=events.find(e=>e.id==="cat");if(!eventIsActive(cat))return;
   const px=player.x+player.w/2,py=player.y+player.h/2,distToPlayer=Math.hypot(px-cat.x*TILE,py-cat.y*TILE);
   if(distToPlayer>120)return;
-  const target=catRoute[catRouteIndex],dx=target[0]-cat.x,dy=target[1]-cat.y,dist=Math.hypot(dx,dy);
-  if(dist<.18){catRouteIndex=(catRouteIndex+1)%catRoute.length;return;}
-  cat.x+=dx/dist*4.2*dt;cat.y+=dy/dist*4.2*dt;
+  const dx=cat.x*TILE-px,dy=cat.y*TILE-py,dist=Math.hypot(dx,dy)||1,step=4.2*dt;
+  let vx=dx/dist*step,vy=dy/dist*step,moved=false;
+  if(!catBlockedAt(cat.x+vx,cat.y)){cat.x+=vx;moved=true;}
+  if(!catBlockedAt(cat.x,cat.y+vy)){cat.y+=vy;moved=true;}
+  // 정면이 막히면 옆으로 빠져나가며 절대로 구조물 내부로 진입하지 않는다.
+  if(!moved){vx=-dy/dist*step;vy=dx/dist*step;if(!catBlockedAt(cat.x+vx,cat.y))cat.x+=vx;if(!catBlockedAt(cat.x,cat.y+vy))cat.y+=vy;}
 }
 
 function updateChallenge(dt){
@@ -137,7 +127,7 @@ function update(dt){
     if(dx&&dy){dx*=Math.SQRT1_2;dy*=Math.SQRT1_2;}tryMove(dx*player.speed*dt,dy*player.speed*dt);
   }
   player.moving=Boolean(dx||dy)&&!activeEntity;if(player.moving)player.walk+=dt*11;
-  updateCat(dt);updateDisruptors(dt);updateChallenge(dt);
+  updateCat(dt);updateChallenge(dt);
   const sx=player.x-camera.x,sy=player.y-camera.y;let tx=camera.x,ty=camera.y;
   if(sx<250)tx=player.x-250;else if(sx>710)tx=player.x-710;if(sy<170)ty=player.y-170;else if(sy>390)ty=player.y-390;
   camera.x+=(tx-camera.x)*Math.min(1,dt*9);camera.y+=(ty-camera.y)*Math.min(1,dt*9);
@@ -173,12 +163,11 @@ function drawPlayer(){
 }
 
 function eventIsActive(e){return startedEvents.has(e.id)&&!completedEvents.has(e.id);}
-function drawEvents(){events.forEach(e=>{if(e.id==="cat"&&!eventIsActive(e))return;const x=e.x*TILE-camera.x,y=e.y*TILE-camera.y,active=eventIsActive(e);if(e.id==="lamp"){ctx.fillStyle="#454545";ctx.fillRect(x-3,y-20,6,31);ctx.fillRect(x-8,y-22,16,4);ctx.fillStyle=completedEvents.has(e.id)?"#ffe58a":"#8b805a";ctx.fillRect(x-6,y-19,12,9);}else if(e.id==="parcel"){ctx.fillStyle="#3f7254";ctx.fillRect(x-9,y-12,18,19);ctx.fillStyle="#dbe3d8";ctx.fillRect(x-6,y-8,12,4);ctx.fillStyle="#4d4b40";ctx.fillRect(x-2,y+7,4,10);}else if(e.id==="cat"){ctx.fillStyle="#a98661";ctx.fillRect(x-9,y-8,18,12);ctx.fillStyle="#ede2c3";ctx.fillRect(x-6,y-15,12,9);ctx.fillStyle="#333";ctx.fillRect(x-3,y-13,2,2);ctx.fillRect(x+3,y-13,2,2);}else{ctx.fillStyle=e.color;ctx.fillRect(x-11,y-13,22,22);ctx.fillStyle="#171917";ctx.font="bold 9px sans-serif";ctx.textAlign="center";ctx.fillText(e.icon,x,y+1);ctx.textAlign="left";}if(active){ctx.fillStyle=palette.accent;ctx.font="bold 15px sans-serif";ctx.textAlign="center";ctx.fillText("!",x,y-30);ctx.textAlign="left";}});}
-function drawDisruptors(){disruptors.forEach(d=>{drawBaseCharacter(d.x*TILE,d.y*TILE,d.color,d.icon,false);const x=d.x*TILE-camera.x,y=d.y*TILE-camera.y;ctx.fillStyle="#d84d45";ctx.font="bold 13px sans-serif";ctx.textAlign="center";ctx.fillText("×",x,y-29);ctx.textAlign="left";});}
+function drawEvents(){events.forEach(e=>{if(e.id==="cat"&&!eventIsActive(e))return;const x=e.x*TILE-camera.x,y=e.y*TILE-camera.y,active=eventIsActive(e);if(e.id.startsWith("lamp")){ctx.fillStyle="#454545";ctx.fillRect(x-3,y-20,6,31);ctx.fillRect(x-8,y-22,16,4);ctx.fillStyle=completedEvents.has(e.id)?"#ffe58a":"#8b805a";ctx.fillRect(x-6,y-19,12,9);}else if(e.id.startsWith("parcel")){ctx.fillStyle=e.color;ctx.fillRect(x-9,y-12,18,19);ctx.fillStyle="#dbe3d8";ctx.fillRect(x-6,y-8,12,4);ctx.fillStyle="#4d4b40";ctx.fillRect(x-2,y+7,4,10);}else if(e.id==="cat"){ctx.fillStyle="#a98661";ctx.fillRect(x-9,y-8,18,12);ctx.fillStyle="#ede2c3";ctx.fillRect(x-6,y-15,12,9);ctx.fillStyle="#333";ctx.fillRect(x-3,y-13,2,2);ctx.fillRect(x+3,y-13,2,2);}else{ctx.fillStyle=e.color;ctx.fillRect(x-11,y-13,22,22);ctx.fillStyle="#171917";ctx.font="bold 9px sans-serif";ctx.textAlign="center";ctx.fillText(e.icon,x,y+1);ctx.textAlign="left";}if(active){ctx.fillStyle=palette.accent;ctx.font="bold 15px sans-serif";ctx.textAlign="center";ctx.fillText("!",x,y-30);ctx.textAlign="left";}});}
 function nearbyNpc(){return npcs.find(n=>Math.hypot(player.x+player.w/2-n.x*TILE,player.y+player.h/2-n.y*TILE)<54);}
 function nearbyEvent(){return events.find(e=>eventIsActive(e)&&Math.hypot(player.x+player.w/2-e.x*TILE,player.y+player.h/2-e.y*TILE)<52);}
 function drawPrompt(target,label){const x=target.x*TILE-camera.x,y=target.y*TILE-camera.y-42;ctx.fillStyle="#151719e8";ctx.fillRect(x-34,y-12,68,22);ctx.fillStyle="#f6e8bd";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.fillText(`E  ${label}`,x,y+3);ctx.textAlign="left";}
-function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);drawGround();drawScenery();buildings.forEach(drawBuilding);drawEvents();npcs.forEach(drawNpc);drawDisruptors();drawPlayer();if(!activeEntity&&!challenge){const event=nearbyEvent(),npc=nearbyNpc();if(event)drawPrompt(event,event.mode==="chase"?"잡기":"조사");else if(npc)drawPrompt(npc,"대화");}}
+function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);drawGround();drawScenery();buildings.forEach(drawBuilding);drawEvents();npcs.forEach(drawNpc);drawPlayer();if(!activeEntity&&!challenge){const event=nearbyEvent(),npc=nearbyNpc();if(event)drawPrompt(event,event.mode==="chase"?"잡기":"조사");else if(npc)drawPrompt(npc,"대화");}}
 
 function setChallengeBar(value){ui.challengeBar.style.width=`${Math.max(0,Math.min(1,value))*100}%`;}
 function showChallenge(title,text){ui.challenge.classList.remove("hidden");ui.challengeTitle.textContent=title;ui.challengeText.textContent=text;setChallengeBar(0);}
@@ -220,7 +209,16 @@ function handleChallengeKey(key,repeat){
   }
 }
 
-function npcDialogue(npc){if(npc.final){if(completedEvents.size===events.length){items.add("골목 이야기");return npc.lines;}return npc.locked;}if(npc.event){if(completedEvents.has(npc.event))return npc.thanks;if(startedEvents.has(npc.event))return npc.reminder;startedEvents.add(npc.event);return npc.intro;}return npc.lines;}
+function npcDialogue(npc){
+  if(npc.final){if(completedEvents.size===events.length){items.add("골목 이야기");return npc.lines;}return npc.locked;}
+  if(npc.events){
+    if(npc.events.every(id=>completedEvents.has(id)))return npc.thanks;
+    if(npc.events.some(id=>startedEvents.has(id)))return npc.reminder;
+    npc.events.forEach(id=>startedEvents.add(id));return npc.intro;
+  }
+  if(npc.event){if(completedEvents.has(npc.event))return npc.thanks;if(startedEvents.has(npc.event))return npc.reminder;startedEvents.add(npc.event);return npc.intro;}
+  return npc.lines;
+}
 function openDialogue(entity,lines){activeEntity={...entity,currentLines:lines};dialogueIndex=0;renderDialogue();updateProgress();save();}
 function interact(){const event=nearbyEvent();if(event){startChallenge(event);return;}const npc=nearbyNpc();if(!npc){showToast("주변에 조사하거나 대화할 대상이 없습니다.");return;}met.add(npc.id);openDialogue(npc,npcDialogue(npc));}
 function renderDialogue(){const lines=activeEntity.currentLines;if(dialogueIndex>=lines.length){closeDialogue();return;}ui.dialogue.classList.remove("hidden");ui.speaker.textContent=activeEntity.name;ui.text.textContent=lines[dialogueIndex];ui.portrait.textContent=activeEntity.icon;ui.portrait.style.setProperty("--portrait",activeEntity.color);}
