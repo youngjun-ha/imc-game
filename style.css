@@ -59,6 +59,8 @@ canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; 
 }
 .hud-left { left: 14px; }
 .hud-right { right: 14px; text-align: right; color: #d6d0c1; }
+.event-progress { margin-top: 4px; color: #d6d0c1; font-size: 11px; }
+.event-progress strong { color: var(--accent); }
 
 .dialogue {
   position: absolute;
