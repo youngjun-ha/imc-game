@@ -5,7 +5,7 @@ ctx.imageSmoothingEnabled = false;
 const TILE = 32;
 const MAP_W = 70;
 const MAP_H = 45;
-const SAVE_KEY = "imc-neighborhood-save-v1";
+const SAVE_KEY = "imc-neighborhood-save-v2";
 
 const palette = {
   grass: "#7f9b68", grass2: "#738e5f", road: "#777b76", roadLine: "#aaa999",
@@ -14,7 +14,7 @@ const palette = {
 };
 
 const buildings = [
-  { x: 3, y: 3, w: 10, h: 7, color: palette.roof, name: "영준의 집" },
+  { x: 3, y: 3, w: 10, h: 7, color: palette.roof, name: "임씨의 집" },
   { x: 17, y: 2, w: 9, h: 8, color: palette.roof2, name: "빨간 지붕집" },
   { x: 31, y: 3, w: 12, h: 7, color: "#a97a4d", name: "동네 슈퍼" },
   { x: 49, y: 2, w: 15, h: 8, color: "#756f83", name: "연립주택" },
@@ -36,13 +36,13 @@ const fences = [
 ];
 
 const npcs = [
-  { id: "dongzi", name: "Mr.3 Dongzi", x: 15.5, y: 11.5, color: "#cf7a5f", icon: "3", lines: ["친구를 찾는다고? 이 동네에서는 먼저 친구를 만들어야 길이 보여.", "슈퍼 앞의 하얀 옷을 입은 사람에게 물어봐. 골목 소문은 그 사람이 제일 빨라."] },
-  { id: "dust", name: "Mr.6 WhiteDust", x: 43.5, y: 11.5, color: "#d8d8cc", icon: "6", requires: "dongzi", locked: "처음 보는 사람에게는 할 말이 없는데... Mr.3와 먼저 이야기해 봐.", lines: ["콜록! 한빈은 남쪽 이발소 쪽으로 갔어. 하지만 지름길은 막혔지.", "동쪽 큰길로 돌아 내려가. 구경꾼이 길목을 지키고 있을 거야."] },
-  { id: "overseer", name: "Mr.9 Overseer", x: 52.5, y: 27, color: "#728ec0", icon: "9", requires: "dust", locked: "난 아직 구경할 게 없어. 다른 소문부터 가져와.", lines: ["오, 드디어 여기까지 왔군. 나는 모든 걸 봤지.", "한빈을 쫓는 붉은 옷의 남자가 연못 근처를 맴돌고 있어. 먼저 그를 찾아봐."] },
-  { id: "phoenix", name: "In凸 The Phoenix", x: 25.5, y: 31.5, color: "#c95042", icon: "凸", requires: "overseer", locked: "거짓말할 준비가 아직 안 됐어. 구경꾼에게 먼저 가.", lines: ["한빈? 북쪽으로 갔지. 분명해. 아마도. 어쩌면.", "...사실은 남동쪽 골목 끝집에서 삼성 언덕으로 가는 표식을 봤어."] },
-  { id: "grandma", name: "평상 할머니", x: 8.5, y: 30.5, color: "#b7839a", icon: "할", lines: ["이 골목은 길이 빙빙 돌아. 담장 틈과 집 사이를 잘 살펴봐.", "사람들과 이야기를 많이 나누면, 마지막 길도 자연히 열릴 게다."] },
-  { id: "kid", name: "공 차는 아이", x: 38.5, y: 28.5, color: "#e1a84d", icon: "공", lines: ["아저씨 찾는 중이야? 난 놀이터에서 이상한 빨간 그림자를 봤어!", "근데 공을 세 번 차고 사라졌어. 진짜라니까!"] },
-  { id: "guard", name: "언덕 문지기", x: 55, y: 42, color: "#5f8e78", icon: "문", requires: "phoenix", locked: "언덕 위는 위험해. 동네의 중요한 소문을 모두 확인하고 와.", lines: ["건방 사천왕의 소문을 모두 모았군.", "한빈은 평택의 가장 높은 곳에서 기다린다. 다음 장에서 삼성 언덕으로 향하게 될 거야."] },
+  { id: "shopkeeper", name: "동네 슈퍼 주인", x: 15.5, y: 11.5, color: "#cf7a5f", icon: "슈", lines: ["임씨, 동네를 둘러보러 나온 거야?", "큰길을 따라가면 우편배달부를 만날 수 있을 거야."] },
+  { id: "postman", name: "우편배달부", x: 43.5, y: 11.5, color: "#d8d8cc", icon: "우", requires: "shopkeeper", locked: "배달이 바빠서 지금은 길게 이야기하기 어렵네요. 슈퍼에 들렀다가 와주세요.", lines: ["임씨 앞으로 온 우편물은 없네요.", "동쪽 큰길로 내려가면 산책하는 주민을 만날 수 있어요."] },
+  { id: "walker", name: "산책하는 주민", x: 52.5, y: 27, color: "#728ec0", icon: "산", requires: "postman", locked: "우리 아직 인사를 나눈 적이 없죠? 우편배달부에게 먼저 가보세요.", lines: ["안녕하세요, 임씨. 이 동네 골목은 처음엔 꽤 헷갈리죠.", "연못 근처의 세탁소 직원이 골목길을 잘 알고 있어요."] },
+  { id: "laundry", name: "세탁소 직원", x: 25.5, y: 31.5, color: "#c95042", icon: "세", requires: "walker", locked: "지금 손님 옷을 정리하는 중이에요. 산책 나온 분과 먼저 이야기해 보세요.", lines: ["임씨, 골목을 한 바퀴 돌고 있군요.", "남동쪽 골목 끝까지 가면 동네 안내판을 지키는 관리인이 있어요."] },
+  { id: "grandma", name: "평상 할머니", x: 8.5, y: 30.5, color: "#b7839a", icon: "할", lines: ["임씨, 담장 사이로 난 좁은 길도 놓치지 말거라.", "천천히 동네 사람들과 인사하면서 둘러보렴."] },
+  { id: "kid", name: "공 차는 아이", x: 38.5, y: 28.5, color: "#e1a84d", icon: "공", lines: ["임씨 아저씨, 같이 공 찰래요?", "놀이터 옆 골목으로 가면 지름길이 하나 있어요!"] },
+  { id: "manager", name: "동네 관리인", x: 55, y: 42, color: "#5f8e78", icon: "관", requires: "laundry", locked: "동네 안내를 받으려면 주민들과 먼저 인사를 나누고 오세요.", lines: ["임씨, 동네 한 바퀴를 제대로 돌았군요.", "이제 주택가의 길을 익혔습니다. 자유롭게 더 둘러보세요."] },
 ];
 
 const player = { x: 8 * TILE, y: 12 * TILE, w: 20, h: 22, speed: 170, facing: "down" };
@@ -147,7 +147,7 @@ function drawCharacter(x, y, color, icon, metBefore=false) {
 
 function drawPlayer() {
   const x=player.x-camera.x+player.w/2, y=player.y-camera.y+player.h/2;
-  drawCharacter(x,y,"#4f7295","하");
+  drawCharacter(x,y,"#4f7295","임");
   ctx.fillStyle="#d14f43";
   const offsets={left:[-15,-6],right:[10,-6],up:[-3,-28],down:[-3,13]};
   const [ox,oy]=offsets[player.facing]; ctx.fillRect(x+ox,y+oy,6,6);
@@ -193,11 +193,11 @@ function closeDialogue() { activeNpc=null; ui.dialogue.classList.add("hidden"); 
 
 function updateProgress() {
   ui.met.textContent=met.size;
-  const core=["dongzi","dust","overseer","phoenix"];
+  const core=["shopkeeper","postman","walker","laundry"];
   const coreMet=core.filter(id=>met.has(id)).length;
-  if (met.has("guard")) ui.mission.textContent="삼성 언덕으로 가는 길을 찾았다. 다음 장을 기다리자.";
-  else if (coreMet===4) ui.mission.textContent="남동쪽 끝에서 언덕 문지기를 찾아가자.";
-  else ui.mission.textContent=`건방 사천왕의 소문을 모으자. (${coreMet}/4)`;
+  if (met.has("manager")) ui.mission.textContent="주택가의 길을 모두 익혔다. 자유롭게 둘러보자.";
+  else if (coreMet===4) ui.mission.textContent="남동쪽 끝에서 동네 관리인을 찾아가자.";
+  else ui.mission.textContent=`동네 사람들과 인사를 나누자. (${coreMet}/4)`;
 }
 
 function showToast(message) {
@@ -209,8 +209,6 @@ function save() { localStorage.setItem(SAVE_KEY, JSON.stringify({x:player.x,y:pl
 function load() {
   try { const data=JSON.parse(localStorage.getItem(SAVE_KEY)); if (!data) return; player.x=data.x; player.y=data.y; met=new Set(data.met||[]); } catch {}
 }
-function reset() { localStorage.removeItem(SAVE_KEY); location.reload(); }
-
 addEventListener("keydown", e => {
   const key=e.key.toLowerCase();
   if (["arrowup","arrowdown","arrowleft","arrowright"," "].includes(key)) e.preventDefault();
@@ -219,7 +217,6 @@ addEventListener("keydown", e => {
 });
 addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
 document.querySelector("#nextButton").addEventListener("click", nextDialogue);
-document.querySelector("#resetButton").addEventListener("click", reset);
 addEventListener("beforeunload", save);
 
 load(); updateProgress();

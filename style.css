@@ -30,7 +30,7 @@ body {
   background: var(--panel);
 }
 
-.topbar, footer {
+.topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -104,9 +104,6 @@ canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; 
 }
 .toast.show { opacity: 1; translate: -50% 0; }
 
-footer { border-top: 2px solid #3b403b; border-bottom: 0; color: var(--muted); font-size: 12px; }
-footer button { border: 1px solid var(--line); padding: 7px 10px; background: #242925; color: var(--ink); cursor: pointer; }
-
 @media (max-width: 680px) {
   body { padding: 0; background: #111; }
   .game-shell { border-width: 0; }
@@ -115,5 +112,4 @@ footer button { border: 1px solid var(--line); padding: 7px 10px; background: #2
   .hud-right { display: none; }
   .dialogue { left: 3%; right: 3%; min-height: 115px; }
   .portrait { flex-basis: 60px; }
-  footer { padding: 10px 12px; }
 }
