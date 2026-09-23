@@ -61,6 +61,17 @@ canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; 
 .hud-right { right: 14px; text-align: right; color: #d6d0c1; }
 .event-progress { margin-top: 4px; color: #d6d0c1; font-size: 11px; }
 .event-progress strong { color: var(--accent); }
+.quest-panel {
+  position: absolute; top: 105px; left: 14px; z-index: 6;
+  width: 220px; padding: 10px 12px;
+  border: 2px solid #101210; background: #171a1ddd;
+  box-shadow: 3px 3px 0 #0006; font-size: 11px;
+}
+.quest-panel ul { margin: 7px 0 0; padding: 0; list-style: none; }
+.quest-panel li { margin-top: 5px; padding-left: 12px; color: #eee5d1; line-height: 1.35; position: relative; }
+.quest-panel li::before { content: "◆"; position: absolute; left: 0; color: var(--accent); font-size: 8px; }
+.quest-panel .quest-empty { color: var(--muted); padding-left: 0; }
+.quest-panel .quest-empty::before { content: ""; }
 
 .dialogue {
   position: absolute;
@@ -156,6 +167,7 @@ canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; 
   .topbar { align-items: flex-start; padding: 12px; }
   .mission { max-width: 62%; }
   .hud-right { display: none; }
+  .quest-panel { top: 85px; left: 8px; width: 180px; max-height: 120px; overflow: auto; }
   .dialogue { left: 3%; right: 3%; min-height: 115px; }
   .portrait { flex-basis: 60px; }
 }
