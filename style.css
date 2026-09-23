@@ -81,7 +81,7 @@ canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; 
 .minimap-panel canvas { width: 196px; height: 126px; margin-top: 6px; border: 1px solid #59605b; background: #252c28; image-rendering: pixelated; }
 .minimap-legend { display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 4px; color: #c7c0b1; font-size: 9px; }
 .minimap-legend span { width: 7px; height: 7px; display: inline-block; margin-left: 5px; }
-.me-dot { background: #7dd8ff; }.quest-dot { background: #f2c14e; }.goal-dot { background: #ed6a5a; }
+.me-dot { background: #7dd8ff; }.quest-dot { background: #f2c14e; }
 
 .dialogue {
   position: absolute;
