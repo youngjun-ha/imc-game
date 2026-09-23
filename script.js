@@ -4,7 +4,7 @@ ctx.imageSmoothingEnabled = false;
 
 const TILE = 32, MAP_W = 140, MAP_H = 90;
 const SAVE_KEY = "imc-neighborhood-save-v5";
-const RANK_KEY = "imc-commute-ranking-v1", GAME_DURATION = 300;
+const RANK_KEY = "imc-commute-ranking-v1", GAME_DURATION = 600;
 const palette = { grass:"#7f9b68",grass2:"#738e5f",road:"#777b76",roadEdge:"#686d68",wall:"#ddd0af",roof:"#9d584c",roof2:"#6d777f",fence:"#6c5745",tree:"#3e6b4b",trunk:"#5c4432",water:"#5d8ca0",accent:"#f2c14e" };
 
 const baseBuildings = [
@@ -42,16 +42,16 @@ const hills=[{x:39,y:38,r:6},{x:66,y:16,r:5},{x:103,y:38,r:8},{x:64,y:67,r:7},{x
 
 const npcs=[
   {id:"junk",name:"태엽 고물상 춘배",x:15.5,y:11.5,color:"#bb6b4f",icon:"춘",style:"wrench",events:["lamp","lamp2","lamp3"],intro:["임씨! 마침 잘 왔어. 네 구역의 가로등 세 개가 동시에 말썽이야.","가까운 북쪽 골목부터 먼 아랫마을 언덕까지 모두 찾아서 전선을 단단히 고정해 줘!"],reminder:["고장 난 가로등은 모두 세 개야. 지도 끝쪽 골목과 언덕도 빠뜨리지 마!"],thanks:["세 가로등이 전부 안정됐군! 이제 밤에도 네 구역을 안전하게 다닐 수 있겠어."]},
-  {id:"detective",name:"골목 탐정 미미",x:43.5,y:11.5,color:"#75639b",icon:"미",style:"detective",event:"cat",intro:["쉿, 임씨. 지금부터 극비 수사야.","연립주택의 줄무늬 고양이가 사라졌어. 동쪽 언덕 근처에서 방울 소리가 났지."],reminder:["수사 원칙 제1조. 고양이는 사람이 잘 안 가는 풀숲을 좋아한다."],thanks:["사건 해결! 임씨는 오늘부터 명예 골목 탐정이야."]},
-  {id:"courier",name:"졸린 택배기사 만수",x:52.5,y:27,color:"#d39b43",icon:"택",style:"parcel",events:["parcel","parcel2","parcel3"],intro:["임씨... 오늘 배달지가 지도의 세 끝에 흩어져 있네.","시장골목, 윗마을 끝, 아랫마을 언덕의 우체통에 소포를 하나씩 넣어줘. 난 짐을 지키며 안 자고 있을게."],reminder:["우체통은 모두 세 곳이야. 서로 아주 멀리 떨어져 있으니 굽은 큰길을 따라가 봐."],thanks:["세 곳 모두 배달 완료! 임씨 덕분에 오늘도 지각이 아니라 장거리 특별 배송이 됐어."]},
-  {id:"dj",name:"심야 DJ 단비",x:25.5,y:31.5,color:"#477ca3",icon:"DJ",style:"headphone",lines:["낮에는 라디오가 쉬는 시간인데, 임씨한테만 한 곡 틀어줄게.","골목의 소리를 잘 들어봐. 사건이 있는 곳은 평소와 다른 소리가 나거든."]},
-  {id:"fortune",name:"거꾸로 점쟁이 복례",x:8.5,y:30.5,color:"#a85e8e",icon:"점",style:"shawl",lines:["임씨, 오늘 운세는 '길을 잃어야 길을 찾는다'야.","동쪽에서 고양이 방울, 북쪽에서 전기 소리, 남쪽에서 코 고는 소리가 들리는구나."]},
-  {id:"artist",name:"벽화 화가 솔",x:38.5,y:28.5,color:"#4f9b78",icon:"솔",style:"beret",lines:["임씨가 지나간 자리는 이상하게 파란색으로 그리고 싶어져.","언덕의 굽은 길이 마음에 들어. 곧 담장 전체를 지도처럼 칠할 거야."]},
-  {id:"poet",name:"언덕 시인 윤",x:55,y:42,color:"#657b66",icon:"윤",style:"scarf",final:true,locked:["아직 골목의 이야기가 충분히 모이지 않았군요.","네 구역에 흩어진 모든 사건을 해결하고 다시 오세요."],lines:["임씨가 해결한 사건들이 오늘 골목의 이야기가 되었군요.","꼬불꼬불한 길은 더 많은 사람을 만나기 위해 있는지도 몰라요."]},
-  {id:"gardener",name:"성급한 정원사 초록",x:91,y:14,color:"#60965d",icon:"초",style:"shawl",event:"weeds",intro:["임씨, 윗마을 화단의 덩굴이 돌계단을 삼키고 있어!","뿌리가 질겨서 한 번에 뽑히지 않아. 힘껏 여러 번 잡아당겨 줘."],reminder:["윗마을 동쪽 연못 위쪽의 덩굴이야. 손에 힘 꽉 줘!"],thanks:["돌계단이 다시 보인다! 임씨 손이 작은 굴착기보다 낫네."]},
-  {id:"clock",name:"방향치 시계공 시우",x:118,y:31,color:"#8d6d45",icon:"시",style:"wrench",event:"clock",intro:["시계는 고쳤는데 동서남북 바늘이 제멋대로야.","내가 적어둔 방향 순서를 보고 그대로 입력해 줘. 한 번 틀리면 처음부터야."],reminder:["시계탑은 윗마을 남쪽 굽은 길에 있어. 방향을 차례대로 기억해."],thanks:["모든 바늘이 정각을 가리켜! 방향치인 건 나고, 시계는 멀쩡해졌군."]},
-  {id:"coach",name:"박자 교관 박씨",x:30,y:59,color:"#a94f4f",icon:"박",style:"beret",event:"bell",intro:["임씨, 시장 종은 힘이 아니라 박자야.","움직이는 눈금이 노란 구간에 들어올 때 스페이스를 세 번 눌러 봐."],reminder:["시장골목 중앙 종탑에서 정확한 박자를 세 번 맞춰야 해."],thanks:["좋아! 이 정도 박자면 온 동네가 같은 시간에 점심을 먹겠어."]},
-  {id:"collector",name:"표지판 수집가 별",x:96,y:70,color:"#4e82a0",icon:"별",style:"headphone",event:"sign",intro:["아랫마을 표지판 하나가 바람에 돌아가 버렸어.","표지판의 화살표를 북쪽, 동쪽, 남쪽 순서로 맞춰 줘."],reminder:["아랫마을 연못 아래의 파란 표지판이야. 방향 세 개를 순서대로!"],thanks:["완벽해. 이제 길을 잃는 사람은... 아마 조금 줄어들 거야."]},
+  {id:"detective",name:"골목 탐정 미미",x:82,y:29,color:"#75639b",icon:"미",style:"detective",event:"cat",intro:["쉿, 임씨. 지금부터 극비 수사야.","연립주택의 줄무늬 고양이가 사라졌어. 동쪽 언덕 근처에서 방울 소리가 났지."],reminder:["수사 원칙 제1조. 고양이는 사람이 잘 안 가는 풀숲을 좋아한다."],thanks:["사건 해결! 임씨는 오늘부터 명예 골목 탐정이야."]},
+  {id:"courier",name:"졸린 택배기사 만수",x:132,y:24,color:"#d39b43",icon:"택",style:"parcel",events:["parcel","parcel2","parcel3"],intro:["임씨... 오늘 배달지가 지도의 세 끝에 흩어져 있네.","시장골목, 윗마을 끝, 아랫마을 언덕의 우체통에 소포를 하나씩 넣어줘. 난 짐을 지키며 안 자고 있을게."],reminder:["우체통은 모두 세 곳이야. 서로 아주 멀리 떨어져 있으니 굽은 큰길을 따라가 봐."],thanks:["세 곳 모두 배달 완료! 임씨 덕분에 오늘도 지각이 아니라 장거리 특별 배송이 됐어."]},
+  {id:"dj",name:"심야 DJ 단비",x:18,y:48,color:"#477ca3",icon:"DJ",style:"headphone",lines:["낮에는 라디오가 쉬는 시간인데, 임씨한테만 한 곡 틀어줄게.","골목의 소리를 잘 들어봐. 사건이 있는 곳은 평소와 다른 소리가 나거든."]},
+  {id:"fortune",name:"거꾸로 점쟁이 복례",x:55,y:35,color:"#a85e8e",icon:"점",style:"shawl",lines:["임씨, 오늘 운세는 '길을 잃어야 길을 찾는다'야.","동쪽에서 고양이 방울, 북쪽에서 전기 소리, 남쪽에서 코 고는 소리가 들리는구나."]},
+  {id:"artist",name:"벽화 화가 솔",x:84,y:52,color:"#4f9b78",icon:"솔",style:"beret",lines:["임씨가 지나간 자리는 이상하게 파란색으로 그리고 싶어져.","언덕의 굽은 길이 마음에 들어. 곧 담장 전체를 지도처럼 칠할 거야."]},
+  {id:"poet",name:"언덕 시인 윤",x:128,y:63,color:"#657b66",icon:"윤",style:"scarf",final:true,locked:["아직 골목의 이야기가 충분히 모이지 않았군요.","네 구역에 흩어진 모든 사건을 해결하고 다시 오세요."],lines:["임씨가 해결한 사건들이 오늘 골목의 이야기가 되었군요.","꼬불꼬불한 길은 더 많은 사람을 만나기 위해 있는지도 몰라요."]},
+  {id:"gardener",name:"성급한 정원사 초록",x:22,y:60,color:"#60965d",icon:"초",style:"shawl",event:"weeds",intro:["임씨, 윗마을 화단의 덩굴이 돌계단을 삼키고 있어!","뿌리가 질겨서 한 번에 뽑히지 않아. 힘껏 여러 번 잡아당겨 줘."],reminder:["윗마을 동쪽 연못 위쪽의 덩굴이야. 손에 힘 꽉 줘!"],thanks:["돌계단이 다시 보인다! 임씨 손이 작은 굴착기보다 낫네."]},
+  {id:"clock",name:"방향치 시계공 시우",x:52,y:75,color:"#8d6d45",icon:"시",style:"wrench",event:"clock",intro:["시계는 고쳤는데 동서남북 바늘이 제멋대로야.","내가 적어둔 방향 순서를 보고 그대로 입력해 줘. 한 번 틀리면 처음부터야."],reminder:["시계탑은 윗마을 남쪽 굽은 길에 있어. 방향을 차례대로 기억해."],thanks:["모든 바늘이 정각을 가리켜! 방향치인 건 나고, 시계는 멀쩡해졌군."]},
+  {id:"coach",name:"박자 교관 박씨",x:73,y:72,color:"#a94f4f",icon:"박",style:"beret",event:"bell",intro:["임씨, 시장 종은 힘이 아니라 박자야.","움직이는 눈금이 노란 구간에 들어올 때 스페이스를 세 번 눌러 봐."],reminder:["시장골목 중앙 종탑에서 정확한 박자를 세 번 맞춰야 해."],thanks:["좋아! 이 정도 박자면 온 동네가 같은 시간에 점심을 먹겠어."]},
+  {id:"collector",name:"표지판 수집가 별",x:118,y:70,color:"#4e82a0",icon:"별",style:"headphone",event:"sign",intro:["아랫마을 표지판 하나가 바람에 돌아가 버렸어.","표지판의 화살표를 북쪽, 동쪽, 남쪽 순서로 맞춰 줘."],reminder:["아랫마을 연못 아래의 파란 표지판이야. 방향 세 개를 순서대로!"],thanks:["완벽해. 이제 길을 잃는 사람은... 아마 조금 줄어들 거야."]},
 ];
 const events=[
   {id:"lamp",mode:"mash",goal:16,name:"첫 번째 깜빡이는 가로등",x:29.5,y:14.6,icon:"!",color:"#f0cc55",lines:["첫 번째 가로등의 접촉 불량 전선을 단단히 고정했다.","지직거리던 불빛이 따뜻한 노란빛으로 안정됐다!"],reward:"첫 번째 전구 조각"},
@@ -81,6 +81,14 @@ const hazards=[
 ];
 const sewers=[{x:28,y:26},{x:99,y:54}], bike={x:20,y:36,taken:false};
 const fartTrails=[],droppings=[];
+const quizQuestions=[
+  {q:"수열 2, 3, 5, 8, 13 다음 수는?",options:["18","20","21"],answer:"3"},
+  {q:"200의 15%는 얼마일까?",options:["20","30","35"],answer:"2"},
+  {q:"일꾼 3명이 상자 3개를 3분에 옮긴다. 일꾼 6명이 상자 6개를 옮기는 시간은?",options:["3분","6분","9분"],answer:"1"},
+  {q:"자동차가 깜짝 놀라면?",options:["카놀라유","오일쇼크","놀란자동차"],answer:"1"},
+  {q:"왕이 넘어지면?",options:["왕좌","킹콩","왕창"],answer:"2"},
+  {q:"손은 있지만 팔은 없는 것은?",options:["장갑","시계","의자"],answer:"2"},
+];
 
 const player={x:8*TILE,y:12*TILE,w:20,h:26,speed:185,facing:"down",moving:false,walk:0};
 const camera={x:0,y:0},keys=new Set();
@@ -135,7 +143,9 @@ function updateChallenge(dt){
     if(challenge.time<=0)completeChallenge(false);
   }else if(challenge.mode==="escape"){
     challenge.time-=dt;
-    ui.challengeText.textContent=`사다리 방향 ${challenge.index}/${challenge.sequence.length} · 남은 시간 ${Math.max(0,challenge.time).toFixed(1)}초`;
+    const arrows={arrowup:"↑",arrowright:"→",arrowdown:"↓",arrowleft:"←"};
+    const route=challenge.sequence.map((key,i)=>i===challenge.index?`[${arrows[key]}]`:arrows[key]).join(" ");
+    ui.challengeText.textContent=`${route} · 입력 ${challenge.index}/${challenge.sequence.length} · 남은 시간 ${Math.max(0,challenge.time).toFixed(1)}초`;
     if(challenge.time<=0)completeChallenge(false);
   }else if(challenge.mode==="timing"){
     challenge.phase=(challenge.phase+dt*.72)%1;setChallengeBar(challenge.phase);
@@ -165,14 +175,20 @@ function startHazardChallenge(h){
     challenge={mode:"race",count:0,goal:24,time:7,next:"arrowleft",title:h.name,onSuccess:()=>showToast("서씨와의 달리기 승리!"),onFail:()=>{elapsed+=20;showToast("달리기에 져 4분을 허비했다!");}};
     showChallenge("서씨의 달리기 시합","← → 방향키를 번갈아 빠르게 누르세요!");
   }else if(h.kind==="quiz"){
-    challenge={mode:"quiz",answer:"2",title:h.name,onSuccess:()=>showToast("정답! 문제 악당이 길을 비켰다.")};
-    showChallenge("문제 악당에게 붙잡혔다","임씨가 8시에 일어나 9시까지 출근한다. 남은 시간은?  1) 30분  2) 60분  3) 90분");
+    const questions=[...quizQuestions].sort(()=>Math.random()-.5).slice(0,3);
+    challenge={mode:"quiz",questions,quizIndex:0,title:h.name,onSuccess:()=>showToast("3문제 정답! 문제 악당이 길을 비켰다.")};
+    renderQuizQuestion();
   }
 }
+function renderQuizQuestion(){
+  const q=challenge.questions[challenge.quizIndex];challenge.answer=q.answer;
+  showChallenge(`문제 악당 ${challenge.quizIndex+1}/${challenge.questions.length}`,`${q.q}  ${q.options.map((o,i)=>`${i+1}) ${o}`).join("   ")}`);
+  setChallengeBar(challenge.quizIndex/challenge.questions.length);
+}
 function startSewer(index){
-  const arrows=["arrowup","arrowleft","arrowright","arrowup","arrowdown","arrowright","arrowup"];
-  challenge={mode:"escape",index:0,sequence:arrows,time:10,title:"하수구",onSuccess:()=>{sewers[index].escaped=true;showToast("사다리를 찾아 하수구에서 탈출했다!");},onFail:()=>showEnding("하수구 엔딩","어둠 속에서 사다리를 찾지 못했다.","BAD END")};
-  showChallenge("하수구에 빠졌다!","제한 시간 안에 표시되는 방향 순서를 입력해 사다리를 찾으세요.");
+  const arrows=["arrowup","arrowleft","arrowright","arrowdown","arrowup"];
+  challenge={mode:"escape",index:0,sequence:arrows,time:16,title:"하수구",onSuccess:()=>{sewers[index].escaped=true;showToast("사다리를 찾아 하수구에서 탈출했다!");},onFail:()=>showEnding("하수구 엔딩","어둠 속에서 사다리를 찾지 못했다.","BAD END")};
+  showChallenge("하수구에 빠졌다!","방향 순서를 보고 천천히 입력하세요.");
 }
 function updateHazards(dt){
   const px=player.x+player.w/2,py=player.y+player.h/2;
@@ -197,7 +213,8 @@ function updateHazards(dt){
   if(!bike.taken&&Math.hypot(px-bike.x*TILE,py-bike.y*TILE)<30){bike.taken=true;bikeTime=45;showToast("공공자전거 탑승! 45초 동안 이동 속도 상승");}
 }
 
-function updateClock(){const minutes=Math.min(60,Math.floor(elapsed/GAME_DURATION*60));ui.clock.textContent=minutes>=60?"09:00":`08:${String(minutes).padStart(2,"0")}`;ui.condition.textContent=stun>0?"움직임 불가":confused>0?"방향 혼란":slow>0?"느려짐":bikeTime>0?`자전거 ${Math.ceil(bikeTime)}초`:"정상";}
+function clockText(){const total=Math.min(540,450+Math.floor(elapsed/GAME_DURATION*90));return`${String(Math.floor(total/60)).padStart(2,"0")}:${String(total%60).padStart(2,"0")}`;}
+function updateClock(){ui.clock.textContent=clockText();ui.condition.textContent=stun>0?"움직임 불가":confused>0?"방향 혼란":slow>0?"느려짐":bikeTime>0?`자전거 ${Math.ceil(bikeTime)}초`:"정상";}
 
 function update(dt){
   if(!gameStarted||gameEnded)return;
@@ -299,11 +316,12 @@ function handleChallengeKey(key,repeat){
     if(challenge.count>=challenge.goal)completeChallenge(true);return;
   }
   if(challenge.mode==="escape"&&key.startsWith("arrow")){
-    if(key===challenge.sequence[challenge.index])challenge.index++;else{challenge.index=0;showToast("막다른 길! 처음 방향부터 다시.");}
+    if(key===challenge.sequence[challenge.index])challenge.index++;else showToast("그 방향은 막다른 길! 표시된 방향을 다시 확인하세요.");
     setChallengeBar(challenge.index/challenge.sequence.length);if(challenge.index>=challenge.sequence.length)completeChallenge(true);return;
   }
   if(challenge.mode==="quiz"&&["1","2","3"].includes(key)){
-    if(key===challenge.answer)completeChallenge(true);else{elapsed+=10;showToast("오답! 정답을 맞힐 때까지 놓아주지 않는다.");}return;
+    if(key===challenge.answer){challenge.quizIndex++;if(challenge.quizIndex>=challenge.questions.length)completeChallenge(true);else{showToast("정답! 다음 문제.");renderQuizQuestion();}}
+    else{elapsed+=12;showToast("오답! 출근 시간이 조금 줄었다.");}return;
   }
   if(challenge.mode==="sequence"&&key.startsWith("arrow")){
     if(key===challenge.sequence[challenge.index])challenge.index++;
@@ -349,7 +367,7 @@ function showEnding(title,text,label="ENDING",clear=false){
   gameEnded=true;keys.clear();challenge=null;hideChallenge();ui.ending.classList.remove("hidden");ui.endingLabel.textContent=label;ui.endingTitle.textContent=title;if(clear)recordRanking();ui.endingText.textContent=text+(clear?rankingText():"");ui.endingText.style.whiteSpace="pre-line";ui.endingChoices.replaceChildren();ui.restart.style.display="inline-block";
 }
 function showCompanyQuestion(){
-  companyPrompted=true;gameEnded=true;keys.clear();ui.ending.classList.remove("hidden");ui.endingLabel.textContent="AM 08:"+String(Math.min(59,Math.floor(elapsed/GAME_DURATION*60))).padStart(2,"0");ui.endingTitle.textContent="회사 도착 — 마지막 질문";ui.endingText.textContent="상사가 ‘지금 가장 먼저 할 일은?’이라고 묻는다. 임씨라면 뭐라고 답할까?";ui.endingChoices.replaceChildren();ui.restart.style.display="none";
+  companyPrompted=true;gameEnded=true;keys.clear();ui.ending.classList.remove("hidden");ui.endingLabel.textContent=`AM ${clockText()}`;ui.endingTitle.textContent="회사 도착 — 마지막 질문";ui.endingText.textContent="상사가 ‘지금 가장 먼저 할 일은?’이라고 묻는다. 임씨라면 뭐라고 답할까?";ui.endingChoices.replaceChildren();ui.restart.style.display="none";
   [
     ["출근했습니다. 일단 커피부터 마시겠습니다.",true],
     ["오늘은 집에서 일한 것으로 해주세요.",false],
@@ -358,7 +376,7 @@ function showCompanyQuestion(){
   ].forEach(([text,correct])=>{const b=document.createElement("button");b.textContent=text;b.addEventListener("click",()=>correct?showEnding("출근 성공!",`${playerName}은 무사히 도착해 임씨다운 대답으로 하루를 시작했다.`,"CLEAR",true):showEnding("해고 엔딩",`${playerName}은 회사에는 도착했지만 수상한 대답 때문에 바로 돌려보내졌다.`,"BAD END"));ui.endingChoices.appendChild(b);});
 }
 function startGame(){
-  const entered=document.querySelector("#playerName").value.trim();playerName=entered||"임씨";player.x=8*TILE;player.y=12*TILE;elapsed=0;stun=slow=bikeTime=confused=0;bike.taken=false;companyPrompted=false;gameEnded=false;gameStarted=true;ui.start.classList.add("hidden");ui.ending.classList.add("hidden");updateClock();updateProgress();showToast(`${playerName}, 오전 9시까지 회사로 출발!`);
+  const entered=document.querySelector("#playerName").value.trim();playerName=entered||"임씨";player.x=8*TILE;player.y=12*TILE;elapsed=0;stun=slow=bikeTime=confused=0;bike.taken=false;companyPrompted=false;gameEnded=false;gameStarted=true;ui.start.classList.add("hidden");ui.ending.classList.add("hidden");updateClock();updateProgress();showToast(`${playerName}, 오전 7시 30분 출발! 9시까지 회사로 가자.`);
 }
 
 addEventListener("keydown",e=>{const key=e.key.toLowerCase();if(["arrowup","arrowdown","arrowleft","arrowright"," "].includes(key))e.preventDefault();if(challenge){handleChallengeKey(key,e.repeat);return;}if(!gameStarted||gameEnded)return;if((key==="e"||key===" ")&&!e.repeat)activeEntity?nextDialogue():interact();keys.add(key);});
