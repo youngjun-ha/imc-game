@@ -5,7 +5,6 @@ const minimapCanvas=document.querySelector("#minimapCanvas"),miniCtx=minimapCanv
 miniCtx.imageSmoothingEnabled=false;
 
 const TILE = 32, MAP_W = 140, MAP_H = 90;
-const SAVE_KEY = "imc-neighborhood-save-v6";
 const RANK_KEY = "imc-commute-ranking-v1", GAME_DURATION = 600;
 const palette = { grass:"#7f9b68",grass2:"#738e5f",road:"#777b76",roadEdge:"#686d68",wall:"#ddd0af",roof:"#9d584c",roof2:"#6d777f",fence:"#6c5745",tree:"#3e6b4b",trunk:"#5c4432",water:"#5d8ca0",accent:"#f2c14e" };
 
@@ -90,6 +89,7 @@ const hazards=[
   {id:"villain",name:"수상한 악당",x:55,y:60,color:"#4a3135",icon:"악",kind:"fight",range:54,cooldown:0},
   {id:"quiz",name:"문제 악당",x:88,y:76,color:"#33434e",icon:"?",kind:"quiz",range:54,cooldown:0},
 ];
+const hazardStarts=hazards.map(h=>({x:h.x,y:h.y}));
 const sewers=[{x:28,y:26},{x:99,y:54}], bike={x:20,y:36,taken:false};
 const fartTrails=[],droppings=[];
 const quizQuestions=[
@@ -401,17 +401,20 @@ function npcDialogue(npc){
   if(npc.event){if(completedEvents.has(npc.event))return npc.thanks;if(startedEvents.has(npc.event))return npc.reminder;startedEvents.add(npc.event);return npc.intro;}
   return npc.lines;
 }
-function openDialogue(entity,lines){activeEntity={...entity,currentLines:lines};dialogueIndex=0;renderDialogue();updateProgress();save();}
+function openDialogue(entity,lines){activeEntity={...entity,currentLines:lines};dialogueIndex=0;renderDialogue();updateProgress();}
 function interact(){if(inOffice){const px=player.x+player.w/2,py=player.y+player.h/2;if(bossEncountered&&Math.hypot(px-office.computer.x,py-office.computer.y)<70){showEnding("출근 성공!",`${playerName}은 본인 자리를 찾아 컴퓨터를 켜고 업무를 시작했다.`,"CLEAR",true);return;}showToast(bossEncountered?"임씨 자리를 찾아 컴퓨터를 켜자.":"통로에 있는 상사를 지나가야 한다.");return;}const event=nearbyEvent();if(event){startChallenge(event);return;}const npc=nearbyNpc();if(!npc){showToast("주변에 조사하거나 대화할 대상이 없습니다.");return;}met.add(npc.id);openDialogue(npc,npcDialogue(npc));}
 function renderDialogue(){const lines=activeEntity.currentLines;if(dialogueIndex>=lines.length){closeDialogue();return;}ui.dialogue.classList.remove("hidden");ui.speaker.textContent=activeEntity.name;ui.text.textContent=lines[dialogueIndex];ui.portrait.textContent=activeEntity.icon;ui.portrait.style.setProperty("--portrait",activeEntity.color);}
 function nextDialogue(){if(!activeEntity)return;dialogueIndex++;renderDialogue();}
-function closeDialogue(){activeEntity=null;ui.dialogue.classList.add("hidden");updateProgress();save();}
+function closeDialogue(){activeEntity=null;ui.dialogue.classList.add("hidden");updateProgress();}
 function renderQuestList(){const active=questGroups.filter(q=>q.ids.some(id=>startedEvents.has(id))&&!q.ids.every(id=>completedEvents.has(id)));ui.questList.replaceChildren();if(!active.length){const li=document.createElement("li");li.className="quest-empty";li.textContent="아직 받은 미션이 없습니다.";ui.questList.appendChild(li);return;}active.forEach(q=>{const done=q.ids.filter(id=>completedEvents.has(id)).length,li=document.createElement("li");li.textContent=q.ids.length>1?`${q.name} ${done}/${q.ids.length}`:q.name;ui.questList.appendChild(li);});}
 function updateProgress(){ui.met.textContent=met.size;ui.eventCount.textContent=completedEvents.size;renderQuestList();if(inOffice){ui.mission.textContent=bossEncountered?"임씨 자리를 찾아 컴퓨터를 켜자.":"사무실 통로를 지나 임씨 자리로 가자.";return;}const active=events.find(e=>eventIsActive(e));if(active){ui.mission.textContent=`9시 전 회사 도착 · 선택 사건: ${active.name} (${completedEvents.size}/${events.length})`;return;}ui.mission.textContent=`9시 전 회사 도착 · 골목 사건 ${completedEvents.size}/${events.length}`;}
 function showToast(message){ui.toast.textContent=message;ui.toast.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>ui.toast.classList.remove("show"),1400);}
-function playerSaveKey(name){return`${SAVE_KEY}:${encodeURIComponent(name.trim())}`;}
-function save(){if(!gameStarted)return;localStorage.setItem(playerSaveKey(playerName),JSON.stringify({met:[...met],started:[...startedEvents],completed:[...completedEvents],items:[...items]}));}
-function loadPlayerProgress(name){met=new Set();startedEvents=new Set();completedEvents=new Set();items=new Set();try{const raw=localStorage.getItem(playerSaveKey(name));if(!raw)return false;const d=JSON.parse(raw);met=new Set(d.met||[]);startedEvents=new Set(d.started||[]);completedEvents=new Set(d.completed||[]);items=new Set(d.items||[]);return true;}catch{return false;}}
+function resetProgress(){
+  met=new Set();startedEvents=new Set();completedEvents=new Set();items=new Set();
+  const cat=events.find(e=>e.id==="cat");cat.x=66.2;cat.y=15.8;
+  hazards.forEach((h,i)=>{h.x=hazardStarts[i].x;h.y=hazardStarts[i].y;h.cooldown=0;delete h.wander;delete h.drop;});
+  sewers.forEach(s=>delete s.escaped);fartTrails.length=0;droppings.length=0;keys.clear();activeEntity=null;challenge=null;ui.dialogue.classList.add("hidden");hideChallenge();ui.mental.replaceChildren();
+}
 
 function rankingText(){
   try{const ranks=JSON.parse(localStorage.getItem(RANK_KEY)||"[]");if(!ranks.length)return"";return`\n\n빠른 출근 기록\n${ranks.slice(0,5).map((r,i)=>`${i+1}. ${r.name} · ${Math.floor(r.time/60)}분 ${Math.floor(r.time%60)}초`).join("\n")}`;}catch{return"";}
@@ -428,11 +431,11 @@ function showBossQuestion(){
   [["어쩔 수 없지",true],["제가 먼저 고객에게 상황을 설명하고 양해를 구하겠습니다",false],["제가 바로 수정해서 사과와 함께 다시 보내겠습니다",false],["먼저 오류를 확인하고 팀과 해결 방법을 찾겠습니다",false]].forEach(([text,correct])=>{const b=document.createElement("button");b.textContent=text;b.addEventListener("click",()=>{if(correct){bossEncountered=true;gameEnded=false;ui.ending.classList.add("hidden");updateProgress();showToast("상사: ...그래, 일단 가보게.");}else showEnding("회사 밖으로 쫓겨난 엔딩",`상사: 너 누구야?\n${playerName}은 회사 밖으로 쫓겨났다.`,"BAD END");});ui.endingChoices.appendChild(b);});
 }
 function startGame(){
-  const entered=document.querySelector("#playerName").value.trim();playerName=entered||"임씨";loadPlayerProgress(playerName);player.x=8*TILE;player.y=12*TILE;elapsed=0;stun=slow=bikeTime=confused=shakeTime=0;mentalEffect=null;bike.taken=false;companyPrompted=false;inOffice=false;bossEncountered=false;gameEnded=false;gameStarted=true;ui.start.classList.add("hidden");ui.ending.classList.add("hidden");updateClock();updateProgress();showToast(`${playerName}, 오전 7시 30분 출발! 9시까지 회사로 가자.`);
+  const entered=document.querySelector("#playerName").value.trim();playerName=entered||"임씨";resetProgress();player.x=8*TILE;player.y=12*TILE;elapsed=0;stun=slow=bikeTime=confused=shakeTime=0;mentalEffect=null;bike.taken=false;companyPrompted=false;inOffice=false;bossEncountered=false;gameEnded=false;gameStarted=true;ui.start.classList.add("hidden");ui.ending.classList.add("hidden");updateClock();updateProgress();showToast(`${playerName}, 오전 7시 30분 출발! 9시까지 회사로 가자.`);
 }
 
 addEventListener("keydown",e=>{const key=e.key.toLowerCase();if(["arrowup","arrowdown","arrowleft","arrowright"," "].includes(key))e.preventDefault();if(challenge){handleChallengeKey(key,e.repeat);return;}if(!gameStarted||gameEnded)return;if((key==="e"||key===" ")&&!e.repeat)activeEntity?nextDialogue():interact();keys.add(key);});
-addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));document.querySelector("#nextButton").addEventListener("click",nextDialogue);addEventListener("beforeunload",save);
+addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));document.querySelector("#nextButton").addEventListener("click",nextDialogue);
 document.querySelector("#startGameButton").addEventListener("click",startGame);document.querySelector("#playerName").addEventListener("keydown",e=>{if(e.key==="Enter")startGame();});ui.restart.addEventListener("click",()=>location.reload());
 updateProgress();updateClock();
 function loop(now){const dt=Math.min((now-lastTime)/1000,.05);lastTime=now;update(dt);draw();requestAnimationFrame(loop);}requestAnimationFrame(loop);
