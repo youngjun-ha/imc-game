@@ -72,6 +72,16 @@ canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; 
 .quest-panel li::before { content: "◆"; position: absolute; left: 0; color: var(--accent); font-size: 8px; }
 .quest-panel .quest-empty { color: var(--muted); padding-left: 0; }
 .quest-panel .quest-empty::before { content: ""; }
+.minimap-panel {
+  position: absolute; top: 112px; right: 14px; z-index: 6;
+  width: 220px; padding: 9px 10px;
+  border: 2px solid #101210; background: #171a1ddd;
+  box-shadow: 3px 3px 0 #0006;
+}
+.minimap-panel canvas { width: 196px; height: 126px; margin-top: 6px; border: 1px solid #59605b; background: #252c28; image-rendering: pixelated; }
+.minimap-legend { display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 4px; color: #c7c0b1; font-size: 9px; }
+.minimap-legend span { width: 7px; height: 7px; display: inline-block; margin-left: 5px; }
+.me-dot { background: #7dd8ff; }.quest-dot { background: #f2c14e; }.goal-dot { background: #ed6a5a; }
 
 .dialogue {
   position: absolute;
@@ -168,6 +178,9 @@ canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; 
   .mission { max-width: 62%; }
   .hud-right { display: none; }
   .quest-panel { top: 85px; left: 8px; width: 180px; max-height: 120px; overflow: auto; }
+  .minimap-panel { top: 8px; right: 8px; width: 148px; padding: 6px; }
+  .minimap-panel canvas { width: 132px; height: 85px; }
+  .minimap-legend { display: none; }
   .dialogue { left: 3%; right: 3%; min-height: 115px; }
   .portrait { flex-basis: 60px; }
 }

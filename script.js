@@ -1,6 +1,8 @@
 const canvas = document.querySelector("#gameCanvas");
 const ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
+const minimapCanvas=document.querySelector("#minimapCanvas"),miniCtx=minimapCanvas.getContext("2d");
+miniCtx.imageSmoothingEnabled=false;
 
 const TILE = 32, MAP_W = 140, MAP_H = 90;
 const SAVE_KEY = "imc-neighborhood-save-v5";
@@ -8,7 +10,7 @@ const RANK_KEY = "imc-commute-ranking-v1", GAME_DURATION = 600;
 const palette = { grass:"#7f9b68",grass2:"#738e5f",road:"#777b76",roadEdge:"#686d68",wall:"#ddd0af",roof:"#9d584c",roof2:"#6d777f",fence:"#6c5745",tree:"#3e6b4b",trunk:"#5c4432",water:"#5d8ca0",accent:"#f2c14e" };
 
 const baseBuildings = [
-  {x:3,y:3,w:10,h:7,color:palette.roof,name:"임씨의 집"},{x:17,y:2,w:9,h:8,color:palette.roof2,name:"태엽 고물상"},
+  {x:3,y:3,w:10,h:7,color:palette.roof,name:"느티나무 기숙사"},{x:17,y:2,w:9,h:8,color:palette.roof2,name:"태엽 고물상"},
   {x:31,y:3,w:12,h:7,color:"#a97a4d",name:"달빛 사진관"},{x:49,y:2,w:15,h:8,color:"#756f83",name:"해질녘 연립"},
   {x:5,y:17,w:12,h:8,color:"#a96961",name:"수상한 이발소"},{x:22,y:18,w:8,h:6,color:"#697f80",name:"빈집"},
   {x:36,y:16,w:13,h:9,color:"#9b6f53",name:"심야 라디오"},{x:55,y:18,w:10,h:7,color:"#7c7259",name:"멈춘 공사장"},
@@ -22,7 +24,7 @@ const buildings=[...baseBuildings,
   ...baseBuildings.map((b,i)=>({...b,x:b.x+70,y:b.y+45,name:`${districtNames[2]} ${b.name}`})),
 ];
 const company=buildings[buildings.length-1];
-company.name="IMC 회사"; company.color="#445d78";
+company.name="한빛 사무소"; company.color="#445d78";
 const ponds=[{x:17,y:29,w:7,h:4},{x:87,y:24,w:8,h:5},{x:35,y:69,w:9,h:5},{x:108,y:70,w:7,h:4}];
 const baseFences=[{x:1,y:13,w:12},{x:27,y:13,w:12},{x:54,y:13,w:14},{x:1,y:28,w:10},{x:27,y:28,w:8},{x:55,y:28,w:13}];
 const fences=[...baseFences,...baseFences.map(f=>({...f,x:f.x+70})),...baseFences.map(f=>({...f,y:f.y+45})),...baseFences.map(f=>({...f,x:f.x+70,y:f.y+45}))];
@@ -315,11 +317,22 @@ function drawOffice(){
 }
 
 function eventIsActive(e){return startedEvents.has(e.id)&&!completedEvents.has(e.id);}
-function drawEvents(){events.forEach(e=>{if(e.id==="cat"&&!eventIsActive(e))return;const x=e.x*TILE-camera.x,y=e.y*TILE-camera.y,active=eventIsActive(e);if(e.id.startsWith("lamp")){ctx.fillStyle="#454545";ctx.fillRect(x-3,y-20,6,31);ctx.fillRect(x-8,y-22,16,4);ctx.fillStyle=completedEvents.has(e.id)?"#ffe58a":"#8b805a";ctx.fillRect(x-6,y-19,12,9);}else if(e.id.startsWith("parcel")){ctx.fillStyle=e.color;ctx.fillRect(x-9,y-12,18,19);ctx.fillStyle="#dbe3d8";ctx.fillRect(x-6,y-8,12,4);ctx.fillStyle="#4d4b40";ctx.fillRect(x-2,y+7,4,10);}else if(e.id==="cat"){ctx.fillStyle="#a98661";ctx.fillRect(x-9,y-8,18,12);ctx.fillStyle="#ede2c3";ctx.fillRect(x-6,y-15,12,9);ctx.fillStyle="#333";ctx.fillRect(x-3,y-13,2,2);ctx.fillRect(x+3,y-13,2,2);}else{ctx.fillStyle=e.color;ctx.fillRect(x-11,y-13,22,22);ctx.fillStyle="#171917";ctx.font="bold 9px sans-serif";ctx.textAlign="center";ctx.fillText(e.icon,x,y+1);ctx.textAlign="left";}if(active){ctx.fillStyle=palette.accent;ctx.font="bold 15px sans-serif";ctx.textAlign="center";ctx.fillText("!",x,y-30);ctx.textAlign="left";}});}
+function drawPixelEvent(e,x,y){
+  if(e.id==="weeds"){ctx.fillStyle="#4a3929";ctx.fillRect(x-2,y-5,4,16);ctx.fillStyle="#2f6f3d";ctx.fillRect(x-12,y-10,9,6);ctx.fillRect(x+3,y-14,10,7);ctx.fillRect(x-8,y-18,8,7);ctx.fillStyle="#66a752";ctx.fillRect(x-10,y-8,6,3);ctx.fillRect(x+5,y-12,6,3);}
+  else if(e.id==="clock"){ctx.fillStyle="#574331";ctx.fillRect(x-10,y-17,20,28);ctx.fillStyle="#c8a86b";ctx.fillRect(x-12,y-20,24,5);ctx.fillRect(x-7,y+1,14,10);ctx.fillStyle="#eee3bd";ctx.fillRect(x-7,y-13,14,13);ctx.fillStyle="#35332f";ctx.fillRect(x-1,y-11,2,7);ctx.fillRect(x-1,y-5,6,2);ctx.fillRect(x-3,y+6,6,5);}
+  else if(e.id==="bell"){ctx.fillStyle="#49381f";ctx.fillRect(x-4,y-23,8,4);ctx.fillStyle="#d8a532";ctx.fillRect(x-7,y-19,14,5);ctx.fillRect(x-10,y-14,20,11);ctx.fillRect(x-13,y-3,26,5);ctx.fillStyle="#f2c95c";ctx.fillRect(x-7,y-12,5,8);ctx.fillStyle="#6f4b1e";ctx.fillRect(x-3,y+2,6,6);ctx.fillRect(x-7,y+7,14,3);}
+  else if(e.id==="sign"){ctx.fillStyle="#514335";ctx.fillRect(x-2,y-4,5,18);ctx.fillStyle="#3f7797";ctx.fillRect(x-12,y-18,21,7);ctx.fillRect(x-7,y-9,20,7);ctx.fillStyle="#9dc6d2";ctx.fillRect(x-8,y-16,12,2);ctx.fillRect(x-2,y-7,10,2);ctx.fillStyle="#3f7797";ctx.fillRect(x+8,y-16,5,3);ctx.fillRect(x-11,y-7,5,3);}
+}
+function drawEvents(){events.forEach(e=>{if(e.id==="cat"&&!eventIsActive(e))return;const x=e.x*TILE-camera.x,y=e.y*TILE-camera.y,active=eventIsActive(e);if(e.id.startsWith("lamp")){ctx.fillStyle="#454545";ctx.fillRect(x-3,y-20,6,31);ctx.fillRect(x-8,y-22,16,4);ctx.fillStyle=completedEvents.has(e.id)?"#ffe58a":"#8b805a";ctx.fillRect(x-6,y-19,12,9);}else if(e.id.startsWith("parcel")){ctx.fillStyle=e.color;ctx.fillRect(x-9,y-12,18,19);ctx.fillStyle="#dbe3d8";ctx.fillRect(x-6,y-8,12,4);ctx.fillStyle="#4d4b40";ctx.fillRect(x-2,y+7,4,10);}else if(e.id==="cat"){ctx.fillStyle="#a98661";ctx.fillRect(x-9,y-8,18,12);ctx.fillStyle="#ede2c3";ctx.fillRect(x-6,y-15,12,9);ctx.fillStyle="#333";ctx.fillRect(x-3,y-13,2,2);ctx.fillRect(x+3,y-13,2,2);}else drawPixelEvent(e,x,y);if(active){ctx.fillStyle=palette.accent;ctx.font="bold 15px sans-serif";ctx.textAlign="center";ctx.fillText("!",x,y-30);ctx.textAlign="left";}});}
 function nearbyNpc(){return npcs.find(n=>Math.hypot(player.x+player.w/2-n.x*TILE,player.y+player.h/2-n.y*TILE)<54);}
 function nearbyEvent(){return events.find(e=>eventIsActive(e)&&Math.hypot(player.x+player.w/2-e.x*TILE,player.y+player.h/2-e.y*TILE)<52);}
 function drawPrompt(target,label){const x=target.x*TILE-camera.x,y=target.y*TILE-camera.y-42;ctx.fillStyle="#151719e8";ctx.fillRect(x-34,y-12,68,22);ctx.fillStyle="#f6e8bd";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.fillText(`E  ${label}`,x,y+3);ctx.textAlign="left";}
-function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();if(shakeTime>0)ctx.translate((Math.random()-.5)*12,(Math.random()-.5)*12);if(inOffice)drawOffice();else{drawGround();drawScenery();buildings.forEach(drawBuilding);drawEvents();drawCommuteHazards();npcs.forEach(drawNpc);drawPlayer();if(gameStarted&&!gameEnded&&!activeEntity&&!challenge){const event=nearbyEvent(),npc=nearbyNpc();if(event)drawPrompt(event,event.mode==="chase"?"잡기":"조사");else if(npc)drawPrompt(npc,"대화");}}ctx.restore();}
+function drawMinimap(){
+  const w=minimapCanvas.width,h=minimapCanvas.height;miniCtx.clearRect(0,0,w,h);miniCtx.fillStyle="#252c28";miniCtx.fillRect(0,0,w,h);miniCtx.strokeStyle="#59645d";miniCtx.strokeRect(.5,.5,w-1,h-1);
+  if(inOffice){const sx=w/canvas.width,sy=h/canvas.height,target=bossEncountered?office.computer:office.boss;miniCtx.fillStyle="#ed6a5a";miniCtx.fillRect(target.x*sx-3,target.y*sy-3,7,7);miniCtx.fillStyle="#7dd8ff";miniCtx.fillRect((player.x+player.w/2)*sx-2,(player.y+player.h/2)*sy-2,5,5);return;}
+  const sx=w/MAP_W,sy=h/MAP_H;events.filter(eventIsActive).forEach(e=>{miniCtx.fillStyle="#f2c14e";miniCtx.fillRect(e.x*sx-2,e.y*sy-2,5,5);});miniCtx.fillStyle="#ed6a5a";miniCtx.fillRect((company.x+company.w/2)*sx-3,(company.y+company.h+1)*sy-3,7,7);miniCtx.fillStyle="#7dd8ff";miniCtx.fillRect((player.x/TILE)*sx-2,(player.y/TILE)*sy-2,5,5);
+}
+function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();if(shakeTime>0)ctx.translate((Math.random()-.5)*12,(Math.random()-.5)*12);if(inOffice)drawOffice();else{drawGround();drawScenery();buildings.forEach(drawBuilding);drawEvents();drawCommuteHazards();npcs.forEach(drawNpc);drawPlayer();if(gameStarted&&!gameEnded&&!activeEntity&&!challenge){const event=nearbyEvent(),npc=nearbyNpc();if(event)drawPrompt(event,event.mode==="chase"?"잡기":"조사");else if(npc)drawPrompt(npc,"대화");}}ctx.restore();drawMinimap();}
 
 function setChallengeBar(value){ui.challengeBar.style.width=`${Math.max(0,Math.min(1,value))*100}%`;}
 function showChallenge(title,text){ui.challenge.classList.remove("hidden");ui.challengeTitle.textContent=title;ui.challengeText.textContent=text;setChallengeBar(0);}
@@ -410,8 +423,8 @@ function showEnding(title,text,label="ENDING",clear=false){
 }
 function enterOffice(){companyPrompted=true;inOffice=true;bossEncountered=false;camera.x=0;camera.y=0;player.x=70;player.y=500;keys.clear();updateProgress();showToast("회사 도착! 이제 임씨 자리에서 컴퓨터를 켜야 한다.");}
 function showBossQuestion(){
-  gameEnded=true;keys.clear();ui.ending.classList.remove("hidden");ui.endingLabel.textContent="상사에게 붙잡혔다";ui.endingTitle.textContent="곤란한 업무 질문";ui.endingText.textContent="상사: 오늘 안에 끝내기 어려운 일인데 거래처에서는 무조건 해달라고 하네. 어떻게 할 건가?";ui.endingChoices.replaceChildren();ui.restart.style.display="none";
-  [["어쩔 수 없지",true],["제가 왜 해야 하죠?",false],["내일 생각해보겠습니다",false],["일단 못 들은 척하겠습니다",false]].forEach(([text,correct])=>{const b=document.createElement("button");b.textContent=text;b.addEventListener("click",()=>{if(correct){bossEncountered=true;gameEnded=false;ui.ending.classList.add("hidden");updateProgress();showToast("상사: ...그래, 일단 가보게.");}else showEnding("회사 밖으로 쫓겨난 엔딩",`상사: 너 누구야?\n${playerName}은 회사 밖으로 쫓겨났다.`,"BAD END");});ui.endingChoices.appendChild(b);});
+  gameEnded=true;keys.clear();ui.ending.classList.remove("hidden");ui.endingLabel.textContent="상사에게 붙잡혔다";ui.endingTitle.textContent="곤란한 업무 질문";ui.endingText.textContent="상사: 고객에게 보낸 회의 자료에서 숫자가 잘못된 걸 이제 발견했네. 자네라면 어떻게 하겠나?";ui.endingChoices.replaceChildren();ui.restart.style.display="none";
+  [["어쩔 수 없지",true],["별수 없네요",false],["제가 바로 수정해서 사과와 함께 다시 보내겠습니다",false],["먼저 오류를 확인하고 팀과 해결 방법을 찾겠습니다",false]].forEach(([text,correct])=>{const b=document.createElement("button");b.textContent=text;b.addEventListener("click",()=>{if(correct){bossEncountered=true;gameEnded=false;ui.ending.classList.add("hidden");updateProgress();showToast("상사: ...그래, 일단 가보게.");}else showEnding("회사 밖으로 쫓겨난 엔딩",`상사: 너 누구야?\n${playerName}은 회사 밖으로 쫓겨났다.`,"BAD END");});ui.endingChoices.appendChild(b);});
 }
 function startGame(){
   const entered=document.querySelector("#playerName").value.trim();playerName=entered||"임씨";player.x=8*TILE;player.y=12*TILE;elapsed=0;stun=slow=bikeTime=confused=shakeTime=0;mentalEffect=null;bike.taken=false;companyPrompted=false;inOffice=false;bossEncountered=false;gameEnded=false;gameStarted=true;ui.start.classList.add("hidden");ui.ending.classList.add("hidden");updateClock();updateProgress();showToast(`${playerName}, 오전 7시 30분 출발! 9시까지 회사로 가자.`);
