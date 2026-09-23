@@ -61,6 +61,10 @@ canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; 
 .hud-right { right: 14px; text-align: right; color: #d6d0c1; }
 .event-progress { margin-top: 4px; color: #d6d0c1; font-size: 11px; }
 .event-progress strong { color: var(--accent); }
+.hp-row { display: flex; justify-content: space-between; gap: 12px; margin-top: 7px; color: #f0d6d1; font-size: 10px; }
+.hp-row strong { color: #ff786b; }
+.hp-track { width: 92px; height: 7px; margin-top: 3px; border: 1px solid #080908; background: #392526; }
+.hp-track span { display: block; width: 100%; height: 100%; background: #d9554c; transition: width .15s; }
 .quest-panel {
   position: absolute; top: 105px; left: 14px; z-index: 6;
   width: 220px; padding: 10px 12px;
