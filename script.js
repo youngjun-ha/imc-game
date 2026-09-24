@@ -227,14 +227,19 @@ function takeDamage(amount,source,notify=true){if(gameEnded)return;const absorbe
 function useHealingItem(){if(gameEnded||activeEntity||challenge)return;if(healingItems<=0){showToast("보유한 회복약이 없다.");return;}if(hp>=100){showToast("HP가 이미 가득 찼다.");return;}healingItems--;const before=hp;hp=Math.min(100,hp+35);updateHpHud();showToast(`회복약 사용! HP +${hp-before}`);}
 function calmHazard(h,message){h.rage=false;h.rude=false;h.rageHits=0;h.attackCooldown=5;h.cooldown=Math.max(h.cooldown||0,5);delete h.attached;if(message)showToast(message);}
 function showKangQuestion(h){
+  if(h.questionAsked)return;h.questionAsked=true;mentalEffect=null;shakeTime=0;
   gameEnded=true;keys.clear();ui.ending.classList.remove("hidden");ui.endingLabel.textContent="강씨의 질문";ui.endingTitle.textContent="임씨 잘못했어?";ui.endingText.textContent="두 번 맞은 강씨가 스매시를 멈추고 대답을 기다린다.";ui.endingChoices.replaceChildren();ui.restart.style.display="none";
-  [["잘못했어",true],["ㅗ",false]].forEach(([text,apologize])=>{const b=document.createElement("button");b.textContent=text;b.addEventListener("click",()=>{ui.ending.classList.add("hidden");gameEnded=false;if(apologize)calmHazard(h,"강씨가 사과를 받고 공격을 멈췄다.");else{h.rude=true;h.rageHits=0;h.attackCooldown=0;showToast("강씨가 더 빠르게 스매시를 날리기 시작한다!");}});ui.endingChoices.appendChild(b);});
+  [["잘못했어",true],["ㅗ",false]].forEach(([text,apologize])=>{const b=document.createElement("button");b.textContent=text;b.addEventListener("click",()=>{ui.ending.classList.add("hidden");gameEnded=false;h.questionAsked=false;if(apologize)calmHazard(h,"강씨가 사과를 받고 공격을 멈췄다.");else{h.rage=true;h.rude=true;h.rageHits=0;h.attackCooldown=0;showToast("강씨가 더 빠르게 스매시를 날리기 시작한다!");}});ui.endingChoices.appendChild(b);});
 }
 function playerAttack(){
-  if(attackCooldown>0||inOffice||inBuilding||activeEntity||challenge||gameEnded)return;const px=player.x+player.w/2,py=player.y+player.h/2;
-  const targets=hazards.filter(h=>attackableIds.has(h.id)).map(h=>({h,d:Math.hypot(px-h.x*TILE,py-h.y*TILE)})).filter(t=>t.d<58).sort((a,b)=>a.d-b.d);if(!targets.length){showToast("공격이 닿는 대상이 없다.");return;}
-  const h=targets[0].h;attackTime=.18;attackCooldown=.3;h.rage=true;h.attackCooldown=0;
-  if(h.id==="kang"){h.rageHits=(h.rageHits||0)+1;showToast(`강씨를 때렸다! ${h.rageHits}/2`);if(h.rageHits>=2)showKangQuestion(h);return;}
+  if(inOffice||inBuilding||activeEntity||challenge||gameEnded)return;const px=player.x+player.w/2,py=player.y+player.h/2;
+  const targets=hazards.filter(h=>attackableIds.has(h.id)).map(h=>({h,d:Math.hypot(px-h.x*TILE,py-h.y*TILE),range:h.id==="kang"&&h.rage?105:58})).filter(t=>t.d<t.range).sort((a,b)=>a.d-b.d);if(!targets.length){showToast("공격이 닿는 대상이 없다.");return;}
+  const h=targets[0].h;if(attackCooldown>0&&h.id!=="kang")return;attackTime=.18;attackCooldown=h.id==="kang"?.12:.3;h.rage=true;h.attackCooldown=0;
+  if(h.id==="kang"){
+    h.rageHits=Math.min(2,(h.rageHits||0)+1);
+    if(h.rageHits>=2){showKangQuestion(h);return;}
+    h.attackCooldown=.7;showToast("강씨 타격 1/2 · 가까이에서 F키를 한 번 더 누르세요!");return;
+  }
   if(h.id==="yang")showToast("양씨가 화가 나서 무서운 속도로 달려온다!");
   if(h.id==="ha")showToast("하씨: 뭐하는거야?");
   if(h.id==="yook"){yookDamageTimer=.25;showToast("육씨가 분노해 주변 공기를 오염시킨다!");}
@@ -551,7 +556,7 @@ function randomizeBuildingLoot(){
 function resetProgress(){
   met=new Set();startedEvents=new Set();completedEvents=new Set();items=new Set();lootedBuildingItems=new Set();randomizeBuildingLoot();
   const cat=events.find(e=>e.id==="cat");cat.x=66.2;cat.y=15.8;
-  hazards.forEach((h,i)=>{h.x=hazardStarts[i].x;h.y=hazardStarts[i].y;h.cooldown=0;delete h.wander;delete h.drop;delete h.rage;delete h.rude;delete h.rageHits;delete h.attackCooldown;delete h.attached;});
+  hazards.forEach((h,i)=>{h.x=hazardStarts[i].x;h.y=hazardStarts[i].y;h.cooldown=0;delete h.wander;delete h.drop;delete h.rage;delete h.rude;delete h.rageHits;delete h.attackCooldown;delete h.questionAsked;delete h.attached;});
   sewers.forEach(s=>delete s.escaped);fartTrails.length=0;droppings.length=0;keys.clear();activeEntity=null;challenge=null;ui.dialogue.classList.add("hidden");hideChallenge();ui.mental.replaceChildren();
 }
 
