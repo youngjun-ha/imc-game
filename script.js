@@ -244,7 +244,7 @@ function playerAttack(){
   if(h.id==="yang")h.rageDelay=2;
   if(h.id==="ha")showToast("하씨: 뭐하는거야?");
   if(h.id==="yook"){yookDamageTimer=.25;showToast("육씨가 분노해 주변 공기를 오염시킨다!");}
-  if(h.id==="jung")showToast("정영현이 화가 나서 임씨를 쫓아오기 시작한다!");
+  if(h.id==="jung"){delete h.returning;delete h.returnTime;h.hitPause=0;showToast("정영현이 화가 나서 임씨를 쫓아오기 시작한다!");}
   if(h.id==="bong")showToast("봉씨가 근육질로 변했다!");
 }
 function updateRageHazard(h,d,dt,px,py){
@@ -255,13 +255,18 @@ function updateRageHazard(h,d,dt,px,py){
   if(h.id==="ha"){moveActor(h,px,py,dt,335);if(d<35)showEnding("화면 밖 탈출 엔딩","하씨가 ‘뭐하는거야?’라고 외치며 지건을 날렸다. 임씨는 화면 밖까지 날아갔다.","ESCAPE END");return;}
   if(h.id==="kang"){moveActor(h,px,py,dt,h.rude?350:245);if(d<37&&h.attackCooldown<=0){h.attackCooldown=h.rude?.38:.8;takeDamage(10,"강씨의 스매시");h.smashHits=(h.smashHits||0)+1;if(h.smashHits>=2&&!gameEnded){showKangQuestion(h);return;}const dx=(px-h.x*TILE)/(d||1),dy=(py-h.y*TILE)/(d||1);tryMove(dx*30,dy*30);}return;}
   if(h.id==="yook"){moveActor(h,px,py,dt,255);if(d<170){yookDamageTimer-=dt;while(yookDamageTimer<=0&&!gameEnded){takeDamage(3,"육씨의 독성 방귀",false);yookDamageTimer+=.25;}}else yookDamageTimer=.25;return;}
-  if(h.id==="jung"){if(d>220){calmHazard(h,"정영현에게서 멀리 도망쳐 벗어났다.");return;}moveActor(h,px,py,dt,190);if(d<38&&h.attackCooldown<=0){h.attackCooldown=1;takeDamage(10,"정영현의 엉덩이 때리기");}return;}
+  if(h.id==="jung"){
+    if(d>200){h.rage=false;h.rude=false;h.hitPause=0;h.returning=true;h.returnTime=0;h.attackCooldown=1;showToast("정영현에게서 200px 이상 벗어났다. 정영현이 원래 자리로 돌아간다.");return;}
+    if(h.hitPause>0)return;moveActor(h,px,py,dt,170);
+    if(d<38&&h.attackCooldown<=0){h.attackCooldown=1;h.hitPause=.2;takeDamage(10,"정영현의 엉덩이 때리기");}return;
+  }
   if(h.id==="bong"){if(d>150){calmHazard(h,"봉씨에게서 150px 이상 벗어나 도망쳤다.");return;}moveActor(h,px,py,dt,155);if(d<38&&h.attackCooldown<=0){h.attackCooldown=1.25;takeDamage(30,"근육질 봉씨의 크리티컬");const dx=(px-h.x*TILE)/(d||1),dy=(py-h.y*TILE)/(d||1);tryMove(dx*55,dy*55);}}
 }
 function updateHazards(dt){
   const px=player.x+player.w/2,py=player.y+player.h/2;
   hazards.forEach((h,i)=>{
-    h.cooldown=Math.max(0,h.cooldown-dt);h.attackCooldown=Math.max(0,(h.attackCooldown||0)-dt);h.rageDelay=Math.max(0,(h.rageDelay||0)-dt);const d=Math.hypot(px-h.x*TILE,py-h.y*TILE);
+    h.cooldown=Math.max(0,h.cooldown-dt);h.attackCooldown=Math.max(0,(h.attackCooldown||0)-dt);h.rageDelay=Math.max(0,(h.rageDelay||0)-dt);h.hitPause=Math.max(0,(h.hitPause||0)-dt);const d=Math.hypot(px-h.x*TILE,py-h.y*TILE);
+    if(h.returning){const home=hazardStarts[i],homeDistance=Math.hypot(h.x-home.x,h.y-home.y);h.returnTime=(h.returnTime||0)+dt;if(homeDistance<.2||h.returnTime>8){h.x=home.x;h.y=home.y;delete h.returning;delete h.returnTime;}else moveActor(h,home.x*TILE,home.y*TILE,dt,145);return;}
     if(h.rage||h.attached){if(h.rageDelay>0)return;updateRageHazard(h,d,dt,px,py);return;}
     if(["chase","chaseHard","confuse"].includes(h.kind)&&d<h.range)moveActor(h,px,py,dt,h.kind==="chaseHard"?115:78);
     if(h.kind==="fart"){
@@ -560,7 +565,7 @@ function randomizeBuildingLoot(){
 function resetProgress(){
   met=new Set();startedEvents=new Set();completedEvents=new Set();items=new Set();lootedBuildingItems=new Set();randomizeBuildingLoot();
   const cat=events.find(e=>e.id==="cat");cat.x=66.2;cat.y=15.8;
-  hazards.forEach((h,i)=>{h.x=hazardStarts[i].x;h.y=hazardStarts[i].y;h.cooldown=0;delete h.wander;delete h.drop;delete h.rage;delete h.rude;delete h.rageHits;delete h.smashHits;delete h.rageDelay;delete h.attackCooldown;delete h.questionAsked;delete h.attached;});
+  hazards.forEach((h,i)=>{h.x=hazardStarts[i].x;h.y=hazardStarts[i].y;h.cooldown=0;delete h.wander;delete h.drop;delete h.rage;delete h.rude;delete h.rageHits;delete h.smashHits;delete h.rageDelay;delete h.hitPause;delete h.returning;delete h.returnTime;delete h.attackCooldown;delete h.questionAsked;delete h.attached;});
   sewers.forEach(s=>delete s.escaped);fartTrails.length=0;droppings.length=0;keys.clear();activeEntity=null;challenge=null;armorSwapItem=null;kangQuestionTarget=null;ui.dialogue.classList.add("hidden");hideChallenge();ui.mental.replaceChildren();
 }
 
