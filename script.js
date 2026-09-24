@@ -86,8 +86,8 @@ const hazards=[
   {id:"yook",name:"육씨",x:70,y:55,color:"#66804e",icon:"육",kind:"fart",range:0,cooldown:0},
   {id:"jung",name:"정영현",x:103,y:72,color:"#427e99",icon:"정",kind:"birds",range:190,cooldown:0},
   {id:"bong",name:"봉씨",x:119,y:77,color:"#8e6e45",icon:"봉",kind:"confuse",range:220,cooldown:0},
-  {id:"villain",name:"수상한 악당",x:55,y:60,color:"#4a3135",icon:"악",kind:"fight",range:54,cooldown:0},
-  {id:"quiz",name:"문제 악당",x:88,y:76,color:"#33434e",icon:"?",kind:"quiz",range:54,cooldown:0},
+  {id:"villain",name:"수상한 악당",x:55,y:60,color:"#4a3135",icon:"악",kind:"fight",range:200,cooldown:0},
+  {id:"quiz",name:"문제 악당",x:88,y:76,color:"#33434e",icon:"?",kind:"quiz",range:100,cooldown:0},
 ];
 const hazardStarts=hazards.map(h=>({x:h.x,y:h.y}));
 const attackableIds=new Set(["yang","kang","ha","yook","jung","bong"]);
@@ -121,7 +121,7 @@ const office={
   ],
 };
 const worldSolids=buildSolidRects();
-const ui={dialogue:document.querySelector("#dialogue"),speaker:document.querySelector("#speaker"),text:document.querySelector("#dialogueText"),portrait:document.querySelector("#portrait"),met:document.querySelector("#metCount"),total:document.querySelector("#npcCount"),eventCount:document.querySelector("#eventCount"),eventTotal:document.querySelector("#eventTotal"),hpText:document.querySelector("#hpText"),hpBar:document.querySelector("#hpBar"),armorText:document.querySelector("#armorText"),healItemText:document.querySelector("#healItemText"),moneyText:document.querySelector("#moneyText"),fareMoneyText:document.querySelector("#fareMoneyText"),fareNeedText:document.querySelector("#fareNeedText"),fareBar:document.querySelector("#fareBar"),mission:document.querySelector("#missionText"),questList:document.querySelector("#questList"),toast:document.querySelector("#toast"),challenge:document.querySelector("#challenge"),challengeTitle:document.querySelector("#challengeTitle"),challengeText:document.querySelector("#challengeText"),challengeBar:document.querySelector("#challengeBar"),start:document.querySelector("#startScreen"),ending:document.querySelector("#endingScreen"),endingLabel:document.querySelector("#endingLabel"),endingTitle:document.querySelector("#endingTitle"),endingText:document.querySelector("#endingText"),endingChoices:document.querySelector("#endingChoices"),restart:document.querySelector("#restartGameButton"),clock:document.querySelector("#gameClock"),condition:document.querySelector("#conditionText"),mental:document.querySelector("#mentalWords")};
+const ui={dialogue:document.querySelector("#dialogue"),speaker:document.querySelector("#speaker"),text:document.querySelector("#dialogueText"),portrait:document.querySelector("#portrait"),met:document.querySelector("#metCount"),total:document.querySelector("#npcCount"),eventCount:document.querySelector("#eventCount"),eventTotal:document.querySelector("#eventTotal"),hpText:document.querySelector("#hpText"),hpBar:document.querySelector("#hpBar"),armorText:document.querySelector("#armorText"),healItemText:document.querySelector("#healItemText"),moneyText:document.querySelector("#moneyText"),fareMoneyText:document.querySelector("#fareMoneyText"),fareNeedText:document.querySelector("#fareNeedText"),fareBar:document.querySelector("#fareBar"),mission:document.querySelector("#missionText"),questList:document.querySelector("#questList"),toast:document.querySelector("#toast"),danger:document.querySelector("#dangerBanner"),challenge:document.querySelector("#challenge"),challengeTitle:document.querySelector("#challengeTitle"),challengeText:document.querySelector("#challengeText"),challengeBar:document.querySelector("#challengeBar"),start:document.querySelector("#startScreen"),ending:document.querySelector("#endingScreen"),endingLabel:document.querySelector("#endingLabel"),endingTitle:document.querySelector("#endingTitle"),endingText:document.querySelector("#endingText"),endingChoices:document.querySelector("#endingChoices"),restart:document.querySelector("#restartGameButton"),clock:document.querySelector("#gameClock"),condition:document.querySelector("#conditionText"),mental:document.querySelector("#mentalWords")};
 ui.total.textContent=npcs.length;ui.eventTotal.textContent=events.length;
 
 function rectsOverlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
@@ -167,6 +167,9 @@ function updateChallenge(dt){
     const action=challenge.mode==="race"?"← → 번갈아 연타":"E키 연타";
     ui.challengeText.textContent=`${action} ${challenge.count}/${challenge.goal} · 남은 시간 ${Math.max(0,challenge.time).toFixed(1)}초`;
     if(challenge.time<=0)completeChallenge(false);
+  }else if(challenge.mode==="villainFight"){
+    challenge.hitTimer-=dt;while(challenge&&challenge.hitTimer<=0&&!gameEnded){takeDamage(5,"수상한 악당의 연속 공격");if(challenge)challenge.hitTimer+=.5;}
+    if(challenge){setChallengeBar(challenge.count/challenge.goal);ui.challengeText.textContent=`E키 연타 ${challenge.count}/${challenge.goal} · 0.5초마다 HP -5`;}
   }else if(challenge.mode==="escape"){
     challenge.time-=dt;
     const arrows={arrowup:"↑",arrowright:"→",arrowdown:"↓",arrowleft:"←"};
@@ -200,10 +203,7 @@ function updateMentalAttack(dt){
 }
 function startHazardChallenge(h){
   h.cooldown=12;
-  if(h.kind==="fight"){
-    challenge={mode:"mash",count:0,goal:28,time:6,title:h.name,onSuccess:()=>showToast("악당을 물리쳤다!"),onFail:()=>showEnding("기절 엔딩","악당과의 싸움에서 져 길바닥에 쓰러졌다.","BAD END")};
-    showChallenge("악당과 전투","6초 안에 E키를 28번 연타!");
-  }else if(h.kind==="race"){
+  if(h.kind==="race"){
     challenge={mode:"race",count:0,goal:24,time:7,next:"arrowleft",title:h.name,onSuccess:()=>showToast("서씨와의 달리기 승리!"),onFail:()=>{elapsed+=20;showToast("달리기에 져 4분을 허비했다!");}};
     showChallenge("서씨의 달리기 시합","← → 방향키를 번갈아 빠르게 누르세요!");
   }else if(h.kind==="quiz"){
@@ -211,6 +211,11 @@ function startHazardChallenge(h){
     challenge={mode:"quiz",questions,quizIndex:0,title:h.name,onSuccess:()=>showToast("3문제 정답! 문제 악당이 길을 비켰다.")};
     renderQuizQuestion();
   }
+}
+function startVillainFight(h){
+  h.cooldown=30;takeDamage(5,"수상한 악당의 선제공격");if(gameEnded)return;
+  challenge={mode:"villainFight",count:0,goal:18,hitTimer:.5,title:h.name,onSuccess:()=>{h.cooldown=30;showToast("E 연타로 수상한 악당을 제압했다!");}};
+  showChallenge("수상한 악당 제압","E키를 연타해 제압하세요! 0.5초마다 공격받습니다.");
 }
 function renderQuizQuestion(){
   const q=challenge.questions[challenge.quizIndex];challenge.answer=q.answer;
@@ -244,7 +249,7 @@ function playerAttack(){
   if(h.id==="yang")h.rageDelay=2;
   if(h.id==="ha")showToast("하씨: 뭐하는거야?");
   if(h.id==="yook"){yookDamageTimer=.25;showToast("육씨가 분노해 주변 공기를 오염시킨다!");}
-  if(h.id==="jung"){delete h.returning;delete h.returnTime;h.hitPause=0;showToast("도망가서 그로부터 엉덩이를 지키세요!");}
+  if(h.id==="jung"){delete h.returning;delete h.returnTime;h.hitPause=0;}
   if(h.id==="bong")showToast("봉씨가 근육질로 변했다!");
 }
 function updateRageHazard(h,d,dt,px,py){
@@ -268,6 +273,8 @@ function updateHazards(dt){
     h.cooldown=Math.max(0,h.cooldown-dt);h.attackCooldown=Math.max(0,(h.attackCooldown||0)-dt);h.rageDelay=Math.max(0,(h.rageDelay||0)-dt);h.hitPause=Math.max(0,(h.hitPause||0)-dt);const d=Math.hypot(px-h.x*TILE,py-h.y*TILE);
     if(h.returning){const home=hazardStarts[i],homeDistance=Math.hypot(h.x-home.x,h.y-home.y);h.returnTime=(h.returnTime||0)+dt;if(homeDistance<.2||h.returnTime>8){h.x=home.x;h.y=home.y;delete h.returning;delete h.returnTime;}else moveActor(h,home.x*TILE,home.y*TILE,dt,145);return;}
     if(h.rage||h.attached){if(h.rageDelay>0)return;updateRageHazard(h,d,dt,px,py);return;}
+    if(h.kind==="fight"){if(h.cooldown<=0&&!challenge&&!activeEntity&&d<h.range){moveActor(h,px,py,dt,260);if(d<35)startVillainFight(h);}return;}
+    if(h.kind==="quiz"){if(h.cooldown<=0&&!challenge&&!activeEntity&&d<h.range){moveActor(h,px,py,dt,275);if(d<34)startHazardChallenge(h);}return;}
     if(["chase","chaseHard","confuse"].includes(h.kind)&&d<h.range)moveActor(h,px,py,dt,h.kind==="chaseHard"?115:78);
     if(h.kind==="fart"){
       h.wander=(h.wander||0)+dt;const tx=(70+Math.sin(h.wander*.5)*9)*TILE,ty=(55+Math.cos(h.wander*.35)*7)*TILE;moveActor(h,tx,ty,dt,40);
@@ -279,7 +286,7 @@ function updateHazards(dt){
     if(h.kind==="chaseHard"&&d<34){stun=1.1;h.cooldown=8;const dx=(px-h.x*TILE)/(d||1),dy=(py-h.y*TILE)/(d||1);tryMove(dx*55,dy*55);showToast("하씨: 뭐하는거야! 3연속 옆구리 공격!");}
     if(h.kind==="mental"&&d<h.range){h.cooldown=10;startMentalAttack();}
     if(h.kind==="confuse"&&d<35){confused=3;h.cooldown=10;showToast("봉씨 때문에 방향 감각이 뒤집혔다!");}
-    if(["fight","race","quiz"].includes(h.kind)&&d<h.range&&!challenge&&!activeEntity)startHazardChallenge(h);
+    if(h.kind==="race"&&d<h.range&&!challenge&&!activeEntity)startHazardChallenge(h);
   });
   fartTrails.forEach(t=>t.time-=dt);while(fartTrails[0]&&fartTrails[0].time<=0)fartTrails.shift();
   droppings.forEach(d=>{d.vy+=18*dt;d.y+=d.vy*dt;if(Math.hypot(px-d.x*TILE,py-d.y*TILE)<25){slow=3;d.hit=true;showToast("새똥을 맞아 발걸음이 느려졌다!");}});for(let i=droppings.length-1;i>=0;i--)if(droppings[i].hit||droppings[i].y>MAP_H)droppings.splice(i,1);
@@ -303,6 +310,7 @@ function updateOffice(dt){
 }
 
 function update(dt){
+  updateDangerBanner();
   if(!gameStarted||gameEnded)return;
   elapsed+=dt;stun=Math.max(0,stun-dt);slow=Math.max(0,slow-dt);bikeTime=Math.max(0,bikeTime-dt);confused=Math.max(0,confused-dt);attackTime=Math.max(0,attackTime-dt);attackCooldown=Math.max(0,attackCooldown-dt);updateMentalAttack(dt);updateClock();
   if(elapsed>=GAME_DURATION){showEnding("지각 엔딩",`${playerName}은 오전 9시까지 회사에 도착하지 못했다.`,"LATE END");return;}
@@ -419,10 +427,12 @@ function boardBus(){if(money<busStop.fare){showToast(`버스비가 부족하다.
 function drawPrompt(target,label){const x=target.x*TILE-camera.x,y=target.y*TILE-camera.y-42;ctx.fillStyle="#151719e8";ctx.fillRect(x-34,y-12,68,22);ctx.fillStyle="#f6e8bd";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.fillText(`E  ${label}`,x,y+3);ctx.textAlign="left";}
 function drawDoorPrompt(door){const x=door.x-camera.x,y=door.y-camera.y,yook=hazards.find(h=>h.id==="yook");ctx.fillStyle="#151719e8";ctx.fillRect(x-55,y-16,110,23);ctx.fillStyle="#f6e8bd";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.fillText(yook.rage?"E  건물로 피하기":"E  건물 들어가기",x,y);ctx.textAlign="left";}
 function drawBusPrompt(){const x=busStop.x*TILE-camera.x,y=busStop.y*TILE-camera.y+38;ctx.fillStyle="#151719e8";ctx.fillRect(x-73,y-14,146,24);ctx.fillStyle=money>=busStop.fare?"#f6e8bd":"#d9a19b";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.fillText(`E  버스 타기 ₩${busStop.fare.toLocaleString("ko-KR")}`,x,y+2);ctx.textAlign="left";}
+function updateDangerBanner(){const jung=hazards.find(h=>h.id==="jung"),show=gameStarted&&!gameEnded&&!inOffice&&!inBuilding&&jung.rage;if(show)ui.danger.classList.remove("hidden");else ui.danger.classList.add("hidden");}
+function npcHasUnacceptedMission(npc){const ids=npc.events||[npc.event].filter(Boolean);return ids.length>0&&ids.every(id=>!startedEvents.has(id));}
 function drawMinimap(){
   const w=minimapCanvas.width,h=minimapCanvas.height;miniCtx.clearRect(0,0,w,h);miniCtx.fillStyle="#252c28";miniCtx.fillRect(0,0,w,h);miniCtx.strokeStyle="#59645d";miniCtx.strokeRect(.5,.5,w-1,h-1);
   if(inOffice||inBuilding){const sx=w/canvas.width,sy=h/canvas.height;miniCtx.fillStyle="#7dd8ff";miniCtx.fillRect((player.x+player.w/2)*sx-2,(player.y+player.h/2)*sy-2,5,5);return;}
-  const sx=w/MAP_W,sy=h/MAP_H;events.filter(eventIsActive).forEach(e=>{miniCtx.fillStyle="#f2c14e";miniCtx.fillRect(e.x*sx-2,e.y*sy-2,5,5);});miniCtx.fillStyle="#7dd8ff";miniCtx.fillRect((player.x/TILE)*sx-2,(player.y/TILE)*sy-2,5,5);
+  const sx=w/MAP_W,sy=h/MAP_H;events.filter(eventIsActive).forEach(e=>{miniCtx.fillStyle="#f2c14e";miniCtx.fillRect(e.x*sx-2,e.y*sy-2,5,5);});npcs.filter(npcHasUnacceptedMission).forEach(n=>{miniCtx.fillStyle="#ff786b";miniCtx.font="bold 9px sans-serif";miniCtx.textAlign="center";miniCtx.fillText("!",n.x*sx,n.y*sy+3);});miniCtx.textAlign="left";miniCtx.fillStyle="#7dd8ff";miniCtx.fillRect((player.x/TILE)*sx-2,(player.y/TILE)*sy-2,5,5);
 }
 function drawRoomItem(item){
   const x=item.x,y=item.y;if(item.kind==="heal"){ctx.fillStyle="#e8e2d0";ctx.fillRect(x-8,y-13,16,22);ctx.fillStyle="#b54f58";ctx.fillRect(x-10,y-7,20,14);ctx.fillStyle="#fff";ctx.fillRect(x-2,y-5,4,10);ctx.fillRect(x-5,y-2,10,4);ctx.fillStyle="#777";ctx.fillRect(x-5,y-17,10,4);}else{ctx.fillStyle=item.armor.color;ctx.fillRect(x-12,y-13,24,25);ctx.fillRect(x-18,y-9,7,15);ctx.fillRect(x+11,y-9,7,15);ctx.fillStyle="#d5cab0";ctx.fillRect(x-4,y-12,8,8);ctx.fillStyle="#242a2c";ctx.fillRect(x-3,y-2,6,13);}
@@ -509,6 +519,9 @@ function handleChallengeKey(key,repeat){
   if(challenge.mode==="mash"&&key==="e"){
     challenge.count++;if(challenge.count>=challenge.goal)completeChallenge(true);return;
   }
+  if(challenge.mode==="villainFight"&&key==="e"){
+    challenge.count++;setChallengeBar(challenge.count/challenge.goal);if(challenge.count>=challenge.goal)completeChallenge(true);return;
+  }
   if(challenge.mode==="race"&&(key==="arrowleft"||key==="arrowright")){
     if(key===challenge.next){challenge.count++;challenge.next=key==="arrowleft"?"arrowright":"arrowleft";}else challenge.count=Math.max(0,challenge.count-1);
     if(challenge.count>=challenge.goal)completeChallenge(true);return;
@@ -566,7 +579,7 @@ function resetProgress(){
   met=new Set();startedEvents=new Set();completedEvents=new Set();items=new Set();lootedBuildingItems=new Set();randomizeBuildingLoot();
   const cat=events.find(e=>e.id==="cat");cat.x=66.2;cat.y=15.8;
   hazards.forEach((h,i)=>{h.x=hazardStarts[i].x;h.y=hazardStarts[i].y;h.cooldown=0;delete h.wander;delete h.drop;delete h.rage;delete h.rude;delete h.rageHits;delete h.smashHits;delete h.rageDelay;delete h.hitPause;delete h.returning;delete h.returnTime;delete h.attackCooldown;delete h.questionAsked;delete h.attached;});
-  sewers.forEach(s=>delete s.escaped);fartTrails.length=0;droppings.length=0;keys.clear();activeEntity=null;challenge=null;armorSwapItem=null;kangQuestionTarget=null;bossQuestionActive=false;ui.dialogue.classList.add("hidden");hideChallenge();ui.mental.replaceChildren();
+  sewers.forEach(s=>delete s.escaped);fartTrails.length=0;droppings.length=0;keys.clear();activeEntity=null;challenge=null;armorSwapItem=null;kangQuestionTarget=null;bossQuestionActive=false;ui.dialogue.classList.add("hidden");ui.danger.classList.add("hidden");hideChallenge();ui.mental.replaceChildren();
 }
 
 function rankingText(){
