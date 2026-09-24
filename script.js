@@ -109,7 +109,7 @@ let activeEntity=null,challenge=null,dialogueIndex=0,lastTime=performance.now(),
 let gameStarted=false,gameEnded=false,elapsed=0,playerName="임씨",stun=0,slow=0,bikeTime=0,confused=0,busBoarded=false;
 let shakeTime=0,mentalEffect=null,inOffice=false,inBuilding=false,bossEncountered=false,currentBuilding=null,currentRoomItems=[];
 let hp=100,equippedArmor=null,healingItems=0,money=0,attackTime=0,attackCooldown=0,yangAttached=0,yookDamageTimer=0;
-let lootedBuildingItems=new Set();
+let lootedBuildingItems=new Set(),buildingLootTypes=[];
 const armorCatalog=[{name:"낡은 보호조끼",max:25,color:"#6d7f77"},{name:"강화 작업복",max:40,color:"#56788c"},{name:"충격 흡수 갑옷",max:55,color:"#665b87"}];
 const room={exit:{x:480,y:520},solids:[{x:130,y:235,w:260,h:42},{x:570,y:235,w:260,h:42},{x:420,y:90,w:120,h:54}]};
 const office={
@@ -380,11 +380,11 @@ function nearbyBuildingEntrance(){const px=player.x+player.w/2,py=player.y+playe
 function enterBuilding(door){
   const yook=hazards.find(h=>h.id==="yook");if(yook.rage){const i=hazards.indexOf(yook);calmHazard(yook,"건물 안으로 피해 육씨에게서 탈출했다.");yook.x=hazardStarts[i].x;yook.y=hazardStarts[i].y;yookDamageTimer=.25;}
   inBuilding=true;currentBuilding=door;camera.x=0;camera.y=0;player.x=470;player.y=470;keys.clear();
-  const armor=armorCatalog[door.index%armorCatalog.length];
-  currentRoomItems=[
-    {id:`${door.index}:heal`,kind:"heal",x:275,y:155},
-    {id:`${door.index}:armor`,kind:"armor",x:690,y:155,armor},
-  ].filter(item=>!lootedBuildingItems.has(item.id));
+  const armor=armorCatalog[door.index%armorCatalog.length],lootType=buildingLootTypes[door.index]||"none";
+  currentRoomItems=[];
+  if(lootType==="heal"||lootType==="both")currentRoomItems.push({id:`${door.index}:heal`,kind:"heal",x:275,y:155});
+  if(lootType==="armor"||lootType==="both")currentRoomItems.push({id:`${door.index}:armor`,kind:"armor",x:690,y:155,armor});
+  currentRoomItems=currentRoomItems.filter(item=>!lootedBuildingItems.has(item.id));
   updateProgress();showToast(`${door.b.name} 안으로 들어왔다. 직접 물건을 찾아보자.`);
 }
 function leaveBuilding(){const door=currentBuilding;inBuilding=false;currentBuilding=null;currentRoomItems=[];player.x=door.x-player.w/2;player.y=door.y+12;camera.x=Math.max(0,Math.min(player.x-canvas.width/2,MAP_W*TILE-canvas.width));camera.y=Math.max(0,Math.min(player.y-canvas.height/2,MAP_H*TILE-canvas.height));keys.clear();updateProgress();showToast("건물 밖으로 나왔다.");}
@@ -414,10 +414,49 @@ function drawRoomItem(item){
   const x=item.x,y=item.y;if(item.kind==="heal"){ctx.fillStyle="#e8e2d0";ctx.fillRect(x-8,y-13,16,22);ctx.fillStyle="#b54f58";ctx.fillRect(x-10,y-7,20,14);ctx.fillStyle="#fff";ctx.fillRect(x-2,y-5,4,10);ctx.fillRect(x-5,y-2,10,4);ctx.fillStyle="#777";ctx.fillRect(x-5,y-17,10,4);}else{ctx.fillStyle=item.armor.color;ctx.fillRect(x-12,y-13,24,25);ctx.fillRect(x-18,y-9,7,15);ctx.fillRect(x+11,y-9,7,15);ctx.fillStyle="#d5cab0";ctx.fillRect(x-4,y-12,8,8);ctx.fillStyle="#242a2c";ctx.fillRect(x-3,y-2,6,13);}
   ctx.fillStyle="#f2c14e";ctx.fillRect(x-2,y-29,4,8);
 }
+function interiorTheme(name){
+  if(name.includes("이발소"))return"이발소";if(name.includes("고물상"))return"고물상";if(name.includes("사진관"))return"사진관";
+  if(name.includes("라디오"))return"라디오 방송실";if(name.includes("공사장"))return"공사장";if(name.includes("작업실"))return"벽화 작업실";
+  if(name.includes("시인의 집"))return"시인의 서재";if(name.includes("빈집"))return"빈집";if(name.includes("점괘"))return"점괘방";
+  if(name.includes("기숙사")||name.includes("연립")||name.includes("빌라"))return"주거 공간";return"주택";
+}
+function drawInteriorTheme(name){
+  const theme=interiorTheme(name);
+  if(theme==="이발소"){
+    ctx.fillStyle="#b9d7d2";ctx.fillRect(160,70,145,112);ctx.fillRect(655,70,145,112);ctx.fillStyle="#e7f3ed";ctx.fillRect(170,80,125,92);ctx.fillRect(665,80,125,92);
+    [[240,219],[720,219]].forEach(([x,y])=>{ctx.fillStyle="#8a3f3b";ctx.fillRect(x-23,y-25,46,30);ctx.fillStyle="#31373a";ctx.fillRect(x-17,y+5,34,10);ctx.fillRect(x-4,y+15,8,18);ctx.fillRect(x-15,y+31,30,6);});
+    ctx.fillStyle="#eee5d3";ctx.fillRect(866,67,12,104);for(let y=70;y<165;y+=20){ctx.fillStyle=y%40===0?"#427ca0":"#ba4b49";ctx.fillRect(866,y,12,10);}
+  }else if(theme==="고물상"){
+    [[205,158,28],[275,174,20],[665,158,30],[745,176,19]].forEach(([x,y,r])=>{ctx.strokeStyle="#a2763f";ctx.lineWidth=7;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.stroke();ctx.fillStyle="#46392d";ctx.fillRect(x-4,y-r-8,8,r*2+16);ctx.fillRect(x-r-8,y-4,r*2+16,8);});
+    ctx.fillStyle="#765239";ctx.fillRect(430,165,100,64);ctx.fillStyle="#a57b4e";ctx.fillRect(438,173,84,8);
+  }else if(theme==="사진관"){
+    [[160,72],[680,72]].forEach(([x,y])=>{ctx.fillStyle="#3c332d";ctx.fillRect(x,y,130,105);ctx.fillStyle="#d9caa9";ctx.fillRect(x+9,y+9,112,87);ctx.fillStyle="#718b91";ctx.fillRect(x+20,y+20,92,56);});
+    ctx.fillStyle="#25292b";ctx.fillRect(462,170,36,27);ctx.fillRect(475,197,10,42);ctx.fillRect(450,236,18,5);ctx.fillRect(492,236,18,5);ctx.fillStyle="#6eb1c1";ctx.fillRect(470,176,20,13);
+  }else if(theme==="라디오 방송실"){
+    [[160,92],[735,92]].forEach(([x,y])=>{ctx.fillStyle="#252a2c";ctx.fillRect(x,y,72,92);ctx.fillStyle="#596064";ctx.fillRect(x+10,y+10,52,52);ctx.fillStyle="#17191a";ctx.beginPath();ctx.arc(x+36,y+36,18,0,Math.PI*2);ctx.fill();ctx.fillStyle="#c7a957";ctx.fillRect(x+14,y+72,44,6);});
+    ctx.fillStyle="#41494c";ctx.fillRect(402,180,156,48);for(let x=414;x<548;x+=19){ctx.fillStyle="#8cc0b5";ctx.fillRect(x,191,5,21);ctx.fillStyle="#dfb858";ctx.fillRect(x-3,207,11,4);}
+  }else if(theme==="공사장"){
+    ctx.fillStyle="#9d7848";for(let x=145;x<825;x+=85){ctx.fillRect(x,75,10,150);ctx.fillRect(x,110,75,8);ctx.fillRect(x,180,75,8);}[[210,212],[710,212]].forEach(([x,y])=>{ctx.fillStyle="#e98731";ctx.fillRect(x-14,y-35,28,32);ctx.fillStyle="#eee0c0";ctx.fillRect(x-11,y-23,22,7);ctx.fillStyle="#353535";ctx.fillRect(x-20,y-4,40,7);});
+  }else if(theme==="벽화 작업실"){
+    ctx.fillStyle="#e9dfc6";ctx.fillRect(150,66,190,120);ctx.fillStyle="#4f91aa";ctx.fillRect(166,83,54,40);ctx.fillStyle="#d8665c";ctx.fillRect(230,105,85,57);ctx.fillStyle="#68a15d";ctx.fillRect(174,137,48,34);ctx.fillStyle="#765038";ctx.fillRect(240,186,10,48);ctx.fillRect(192,230,106,7);[[645,"#4f91aa"],[700,"#d8665c"],[755,"#e1b85e"]].forEach(([x,c])=>{ctx.fillStyle=c;ctx.fillRect(x,205,35,27);ctx.fillStyle="#ddd";ctx.fillRect(x+5,198,25,8);});
+  }else if(theme==="시인의 서재"){
+    for(let y=76;y<190;y+=28){ctx.fillStyle="#5c4432";ctx.fillRect(145,y,230,9);for(let x=154;x<365;x+=15){ctx.fillStyle=["#8b554e","#567386","#8a774d"][Math.floor(x/15)%3];ctx.fillRect(x,y-19,11,19);}}ctx.fillStyle="#574331";ctx.fillRect(620,168,210,61);ctx.fillStyle="#e9dfc6";ctx.fillRect(653,182,80,32);ctx.fillStyle="#252525";ctx.fillRect(742,187,45,24);ctx.fillRect(758,178,13,9);
+  }else if(theme==="빈집"){
+    ctx.strokeStyle="#d8d6c8";ctx.lineWidth=2;[[150,65],[810,65]].forEach(([x,y])=>{for(let i=0;i<4;i++){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+(i-1)*35,y+95);ctx.stroke();}});ctx.fillStyle="#71563d";ctx.fillRect(180,190,75,40);ctx.fillRect(700,176,95,54);ctx.fillStyle="#94724d";ctx.fillRect(188,198,59,8);ctx.fillRect(708,184,79,8);
+  }else if(theme==="점괘방"){
+    ctx.fillStyle="#513d62";ctx.fillRect(120,60,720,125);ctx.fillStyle="#d4b6e1";for(let x=150;x<820;x+=62)ctx.fillRect(x,85+(x%3)*16,5,5);ctx.fillStyle="#6f4b72";ctx.fillRect(414,178,132,50);ctx.fillStyle="#bce3ea";ctx.beginPath();ctx.arc(480,167,28,0,Math.PI*2);ctx.fill();ctx.fillStyle="#e9cc68";ctx.fillRect(456,196,48,8);
+  }else if(theme==="주거 공간"){
+    [[145,92],[665,92]].forEach(([x,y])=>{ctx.fillStyle="#6b5140";ctx.fillRect(x,y,155,91);ctx.fillStyle="#d8c49b";ctx.fillRect(x+9,y+9,137,65);ctx.fillStyle="#8b6670";ctx.fillRect(x+13,y+13,50,24);});ctx.fillStyle="#5e4937";ctx.fillRect(425,176,110,52);ctx.fillStyle="#c6aa72";ctx.fillRect(435,184,90,12);
+  }else{
+    ctx.fillStyle="#607b50";ctx.fillRect(165,126,35,58);ctx.fillStyle="#3f6b47";ctx.fillRect(145,91,75,50);ctx.fillStyle="#765642";ctx.fillRect(670,170,150,58);ctx.fillStyle="#b88965";ctx.fillRect(682,182,126,25);ctx.fillStyle="#cfb67b";ctx.fillRect(430,187,100,41);
+  }
+  ctx.fillStyle="#171a1dcc";ctx.fillRect(775,42,145,23);ctx.fillStyle="#f2c14e";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.fillText(theme,847,58);ctx.textAlign="left";
+}
 function drawBuildingInterior(){
   ctx.fillStyle="#b9a98d";ctx.fillRect(0,0,canvas.width,canvas.height);for(let y=30;y<canvas.height-30;y+=32)for(let x=30;x<canvas.width-30;x+=32){ctx.fillStyle=(x+y)/32%2===0?"#c7b99e":"#bdae91";ctx.fillRect(x,y,32,32);}
   ctx.fillStyle="#3b3028";ctx.fillRect(0,0,canvas.width,28);ctx.fillRect(0,canvas.height-28,canvas.width,28);ctx.fillRect(0,0,28,canvas.height);ctx.fillRect(canvas.width-28,0,28,canvas.height);
   room.solids.forEach(s=>{ctx.fillStyle="#654c36";ctx.fillRect(s.x,s.y,s.w,s.h);ctx.fillStyle="#d0bd94";ctx.fillRect(s.x+6,s.y+6,s.w-12,10);});
+  drawInteriorTheme(currentBuilding?.b.name||"");
   ctx.fillStyle="#2a211c";ctx.fillRect(room.exit.x-28,canvas.height-30,56,30);ctx.fillStyle="#f2c14e";ctx.fillRect(room.exit.x-21,canvas.height-35,42,5);
   ctx.fillStyle="#24211fe8";ctx.fillRect(38,40,Math.min(330,(currentBuilding?.b.name.length||5)*15+28),25);ctx.fillStyle="#f3e9d2";ctx.font="bold 13px sans-serif";ctx.fillText(currentBuilding?.b.name||"건물 내부",50,57);
   currentRoomItems.forEach(drawRoomItem);drawPlayer();
@@ -502,10 +541,15 @@ function renderDialogue(){const lines=activeEntity.currentLines;if(dialogueIndex
 function nextDialogue(){if(!activeEntity)return;dialogueIndex++;renderDialogue();}
 function closeDialogue(){activeEntity=null;ui.dialogue.classList.add("hidden");updateProgress();}
 function renderQuestList(){const active=questGroups.filter(q=>q.ids.some(id=>startedEvents.has(id))&&!q.ids.every(id=>completedEvents.has(id)));ui.questList.replaceChildren();if(!active.length){const li=document.createElement("li");li.className="quest-empty";li.textContent="아직 받은 미션이 없습니다.";ui.questList.appendChild(li);return;}active.forEach(q=>{const done=q.ids.filter(id=>completedEvents.has(id)).length,remaining=q.ids.filter(id=>!completedEvents.has(id)).reduce((sum,id)=>sum+(events.find(e=>e.id===id)?.cash||0),0),li=document.createElement("li");li.textContent=`${q.name}${q.ids.length>1?` ${done}/${q.ids.length}`:""} · 남은 보상 ₩${remaining.toLocaleString("ko-KR")}`;ui.questList.appendChild(li);});}
-function updateProgress(){ui.met.textContent=met.size;ui.eventCount.textContent=completedEvents.size;renderQuestList();if(inOffice){ui.mission.textContent=bossEncountered?"임씨 자리를 찾아 컴퓨터를 켜자.":"사무실 통로를 지나 임씨 자리로 가자.";return;}if(inBuilding){ui.mission.textContent=`${currentBuilding?.b.name||"건물"} 내부 · 회복약과 방어구를 직접 찾아보자.`;return;}const active=events.find(e=>eventIsActive(e));if(money>=busStop.fare){ui.mission.textContent="버스비를 모았다! 정류장에서 버스를 타고 IMC 회사로 가자.";return;}if(active){ui.mission.textContent=`${active.name} · 버스비 ₩${money.toLocaleString("ko-KR")}/₩${busStop.fare.toLocaleString("ko-KR")}`;return;}ui.mission.textContent=`NPC에게 미션을 받아 버스비 모으기 · ₩${money.toLocaleString("ko-KR")}/₩${busStop.fare.toLocaleString("ko-KR")}`;}
+function updateProgress(){ui.met.textContent=met.size;ui.eventCount.textContent=completedEvents.size;renderQuestList();if(inOffice){ui.mission.textContent=bossEncountered?"임씨 자리를 찾아 컴퓨터를 켜자.":"사무실 통로를 지나 임씨 자리로 가자.";return;}if(inBuilding){ui.mission.textContent=`${currentBuilding?.b.name||"건물"} 내부 · 쓸 만한 물건이 있는지 둘러보자.`;return;}const active=events.find(e=>eventIsActive(e));if(money>=busStop.fare){ui.mission.textContent="버스비를 모았다! 정류장에서 버스를 타고 IMC 회사로 가자.";return;}if(active){ui.mission.textContent=`${active.name} · 버스비 ₩${money.toLocaleString("ko-KR")}/₩${busStop.fare.toLocaleString("ko-KR")}`;return;}ui.mission.textContent=`NPC에게 미션을 받아 버스비 모으기 · ₩${money.toLocaleString("ko-KR")}/₩${busStop.fare.toLocaleString("ko-KR")}`;}
 function showToast(message){ui.toast.textContent=message;ui.toast.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>ui.toast.classList.remove("show"),1400);}
+function randomizeBuildingLoot(){
+  const count=buildings.length,none=Math.floor(count*.25),heal=Math.floor(count*.35),armor=Math.floor(count*.25);
+  buildingLootTypes=[...Array(none).fill("none"),...Array(heal).fill("heal"),...Array(armor).fill("armor"),...Array(count-none-heal-armor).fill("both")];
+  for(let i=buildingLootTypes.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[buildingLootTypes[i],buildingLootTypes[j]]=[buildingLootTypes[j],buildingLootTypes[i]];}
+}
 function resetProgress(){
-  met=new Set();startedEvents=new Set();completedEvents=new Set();items=new Set();lootedBuildingItems=new Set();
+  met=new Set();startedEvents=new Set();completedEvents=new Set();items=new Set();lootedBuildingItems=new Set();randomizeBuildingLoot();
   const cat=events.find(e=>e.id==="cat");cat.x=66.2;cat.y=15.8;
   hazards.forEach((h,i)=>{h.x=hazardStarts[i].x;h.y=hazardStarts[i].y;h.cooldown=0;delete h.wander;delete h.drop;delete h.rage;delete h.rude;delete h.rageHits;delete h.attackCooldown;delete h.attached;});
   sewers.forEach(s=>delete s.escaped);fartTrails.length=0;droppings.length=0;keys.clear();activeEntity=null;challenge=null;ui.dialogue.classList.add("hidden");hideChallenge();ui.mental.replaceChildren();

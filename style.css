@@ -79,7 +79,7 @@ canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; 
 .quest-panel .quest-empty { color: var(--muted); padding-left: 0; }
 .quest-panel .quest-empty::before { content: ""; }
 .minimap-panel {
-  position: absolute; top: 145px; right: 14px; z-index: 6;
+  position: absolute; right: 14px; bottom: 78px; z-index: 6;
   width: 220px; padding: 9px 10px;
   border: 2px solid #101210; background: #171a1ddd;
   box-shadow: 3px 3px 0 #0006;
@@ -132,7 +132,7 @@ button.inventory-slot { cursor: pointer; }
 .dialogue button span { opacity: .65; font-size: 10px; }
 
 .toast {
-  position: absolute; left: 50%; bottom: 24px;
+  position: absolute; left: 50%; bottom: 82px; z-index: 10;
   translate: -50% 12px;
   padding: 8px 13px;
   background: #111d; border: 1px solid #eee8;
@@ -192,12 +192,13 @@ button.inventory-slot { cursor: pointer; }
   .topbar { align-items: flex-start; padding: 12px; }
   .mission { max-width: 62%; }
   .hud-right { display: none; }
-  .quest-panel { top: 85px; left: 8px; width: 180px; max-height: 120px; overflow: auto; }
-  .minimap-panel { top: 8px; right: 8px; width: 148px; padding: 6px; }
-  .minimap-panel canvas { width: 132px; height: 85px; }
+  .quest-panel { top: 118px; left: 8px; width: 160px; max-height: 120px; overflow: auto; }
+  .minimap-panel { top: 8px; right: 8px; bottom: auto; width: 122px; padding: 6px; }
+  .minimap-panel canvas { width: 106px; height: 68px; }
   .minimap-legend { display: none; }
   .inventory-bar { bottom: 5px; gap: 2px; }
   .inventory-slot { width: 58px; height: 42px; }
+  .toast { bottom: 58px; max-width: 86%; text-align: center; }
   .dialogue { left: 3%; right: 3%; min-height: 115px; }
   .portrait { flex-basis: 60px; }
 }
