@@ -23,7 +23,7 @@ const buildings=[...baseBuildings,
   ...baseBuildings.map((b,i)=>({...b,x:b.x+70,y:b.y+45,name:`${districtNames[2]} ${b.name}`})),
 ];
 const formerCompany=buildings.pop();
-const busStop={x:formerCompany.x+formerCompany.w/2,y:formerCompany.y+formerCompany.h/2,fare:3000};
+const busStop={x:formerCompany.x+formerCompany.w/2,y:formerCompany.y+formerCompany.h/2,fare:1650};
 const ponds=[{x:17,y:29,w:7,h:4},{x:87,y:24,w:8,h:5},{x:35,y:69,w:9,h:5},{x:108,y:70,w:7,h:4}];
 const baseFences=[{x:1,y:13,w:12},{x:27,y:13,w:12},{x:54,y:13,w:14},{x:1,y:28,w:10},{x:27,y:28,w:8},{x:55,y:28,w:13}];
 const fences=[...baseFences,...baseFences.map(f=>({...f,x:f.x+70})),...baseFences.map(f=>({...f,y:f.y+45})),...baseFences.map(f=>({...f,x:f.x+70,y:f.y+45}))];
@@ -55,17 +55,17 @@ const npcs=[
   {id:"collector",name:"표지판 수집가 별",x:118,y:70,color:"#4e82a0",icon:"별",style:"headphone",event:"sign",intro:["아랫마을 표지판 하나가 바람에 돌아가 버렸어.","표지판의 화살표를 북쪽, 동쪽, 남쪽 순서로 맞춰 줘."],reminder:["아랫마을 연못 아래의 파란 표지판이야. 방향 세 개를 순서대로!"],thanks:["완벽해. 이제 길을 잃는 사람은... 아마 조금 줄어들 거야."]},
 ];
 const events=[
-  {id:"lamp",mode:"mash",goal:16,name:"첫 번째 깜빡이는 가로등",x:29.5,y:14.6,icon:"!",color:"#f0cc55",lines:["첫 번째 가로등의 접촉 불량 전선을 단단히 고정했다.","지직거리던 불빛이 따뜻한 노란빛으로 안정됐다!"],reward:"첫 번째 전구 조각"},
-  {id:"lamp2",mode:"mash",goal:20,name:"두 번째 흔들리는 가로등",x:105,y:45,icon:"!",color:"#e8bc4a",lines:["두 번째 가로등의 느슨한 나사를 여러 번 조였다.","멀리 떨어진 윗마을 골목이 환해졌다!"],reward:"두 번째 전구 조각"},
-  {id:"lamp3",mode:"mash",goal:24,name:"세 번째 꺼진 가로등",x:132,y:88,icon:"!",color:"#dca83b",lines:["마지막 가로등의 굳은 스위치를 끝까지 밀어 올렸다.","아랫마을 언덕 끝까지 불빛이 이어졌다!"],reward:"세 번째 전구 조각"},
-  {id:"cat",mode:"chase",name:"도망치는 줄무늬 고양이",x:66.2,y:15.8,icon:"냥",color:"#d5b486",lines:["한참을 쫓아간 끝에 고양이가 숨을 고른다.","임씨가 조심스럽게 손을 내밀자 방울 달린 목걸이를 보여준다!"],reward:"고양이 방울"},
-  {id:"parcel",mode:"deliver",name:"시장골목 초록 우체통",x:20,y:82,icon:"〒",color:"#4e8b65",lines:["시장골목 끝의 초록 우체통에 첫 소포를 넣었다.","아직 두 곳의 먼 배달지가 남아 있다."],reward:"시장골목 수취 도장"},
-  {id:"parcel2",mode:"deliver",name:"윗마을 파란 우체통",x:118,y:12,icon:"〒",color:"#477c87",lines:["윗마을 끝의 파란 우체통에 두 번째 소포를 넣었다.","이제 아랫마을 언덕의 마지막 배달지만 남았다."],reward:"윗마을 수취 도장"},
-  {id:"parcel3",mode:"deliver",name:"아랫마을 붉은 우체통",x:126,y:76,icon:"〒",color:"#91554d",lines:["아랫마을 언덕의 붉은 우체통에 마지막 소포를 넣었다.","세 구역을 가로지른 장거리 배달이 모두 끝났다!"],reward:"아랫마을 수취 도장"},
-  {id:"weeds",mode:"mash",goal:20,name:"돌계단의 질긴 덩굴",x:101,y:18,icon:"풀",color:"#4c8b55",lines:["임씨가 마지막 덩굴 뿌리까지 힘껏 뽑아냈다.","가려져 있던 오래된 돌계단이 모습을 드러냈다!"],reward:"향긋한 풀잎"},
-  {id:"clock",mode:"sequence",sequence:["arrowup","arrowright","arrowdown","arrowleft","arrowup"],name:"방향 잃은 시계탑",x:110,y:43,icon:"시",color:"#9a7748",lines:["마지막 방향키를 맞추자 네 개의 바늘이 동시에 움직였다.","시계탑이 정확한 종을 울리기 시작했다!"],reward:"작은 태엽"},
-  {id:"bell",mode:"timing",goal:3,name:"시장골목 박자 종",x:38,y:58,icon:"종",color:"#b75d4e",lines:["세 번째 정확한 타격과 함께 맑은 종소리가 골목에 퍼졌다.","시장 사람들이 박수를 보낸다!"],reward:"황동 종조각"},
-  {id:"sign",mode:"sequence",sequence:["arrowup","arrowright","arrowdown","arrowup","arrowright"],name:"돌아간 파란 표지판",x:105,y:75,icon:"표",color:"#4e82a0",lines:["표지판의 화살표가 제자리를 찾았다.","멀리 떨어진 네 골목의 방향이 하나로 이어졌다!"],reward:"낡은 지도 조각"},
+  {id:"lamp",mode:"mash",goal:16,name:"첫 번째 깜빡이는 가로등",x:29.5,y:14.6,icon:"!",color:"#f0cc55",lines:["첫 번째 가로등의 접촉 불량 전선을 단단히 고정했다.","지직거리던 불빛이 따뜻한 노란빛으로 안정됐다!"],reward:"첫 번째 전구 조각",cash:130},
+  {id:"lamp2",mode:"mash",goal:20,name:"두 번째 흔들리는 가로등",x:105,y:45,icon:"!",color:"#e8bc4a",lines:["두 번째 가로등의 느슨한 나사를 여러 번 조였다.","멀리 떨어진 윗마을 골목이 환해졌다!"],reward:"두 번째 전구 조각",cash:130},
+  {id:"lamp3",mode:"mash",goal:24,name:"세 번째 꺼진 가로등",x:132,y:88,icon:"!",color:"#dca83b",lines:["마지막 가로등의 굳은 스위치를 끝까지 밀어 올렸다.","아랫마을 언덕 끝까지 불빛이 이어졌다!"],reward:"세 번째 전구 조각",cash:130},
+  {id:"cat",mode:"chase",name:"도망치는 줄무늬 고양이",x:66.2,y:15.8,icon:"냥",color:"#d5b486",lines:["한참을 쫓아간 끝에 고양이가 숨을 고른다.","임씨가 조심스럽게 손을 내밀자 방울 달린 목걸이를 보여준다!"],reward:"고양이 방울",cash:350},
+  {id:"parcel",mode:"deliver",name:"시장골목 초록 우체통",x:20,y:82,icon:"〒",color:"#4e8b65",lines:["시장골목 끝의 초록 우체통에 첫 소포를 넣었다.","아직 두 곳의 먼 배달지가 남아 있다."],reward:"시장골목 수취 도장",cash:125},
+  {id:"parcel2",mode:"deliver",name:"윗마을 파란 우체통",x:118,y:12,icon:"〒",color:"#477c87",lines:["윗마을 끝의 파란 우체통에 두 번째 소포를 넣었다.","이제 아랫마을 언덕의 마지막 배달지만 남았다."],reward:"윗마을 수취 도장",cash:125},
+  {id:"parcel3",mode:"deliver",name:"아랫마을 붉은 우체통",x:126,y:76,icon:"〒",color:"#91554d",lines:["아랫마을 언덕의 붉은 우체통에 마지막 소포를 넣었다.","세 구역을 가로지른 장거리 배달이 모두 끝났다!"],reward:"아랫마을 수취 도장",cash:130},
+  {id:"weeds",mode:"mash",goal:20,name:"돌계단의 질긴 덩굴",x:101,y:18,icon:"풀",color:"#4c8b55",lines:["임씨가 마지막 덩굴 뿌리까지 힘껏 뽑아냈다.","가려져 있던 오래된 돌계단이 모습을 드러냈다!"],reward:"향긋한 풀잎",cash:330},
+  {id:"clock",mode:"sequence",sequence:["arrowup","arrowright","arrowdown","arrowleft","arrowup"],name:"방향 잃은 시계탑",x:110,y:43,icon:"시",color:"#9a7748",lines:["마지막 방향키를 맞추자 네 개의 바늘이 동시에 움직였다.","시계탑이 정확한 종을 울리기 시작했다!"],reward:"작은 태엽",cash:340},
+  {id:"bell",mode:"timing",goal:3,name:"시장골목 박자 종",x:38,y:58,icon:"종",color:"#b75d4e",lines:["세 번째 정확한 타격과 함께 맑은 종소리가 골목에 퍼졌다.","시장 사람들이 박수를 보낸다!"],reward:"황동 종조각",cash:360},
+  {id:"sign",mode:"sequence",sequence:["arrowup","arrowright","arrowdown","arrowup","arrowright"],name:"돌아간 파란 표지판",x:105,y:75,icon:"표",color:"#4e82a0",lines:["표지판의 화살표가 제자리를 찾았다.","멀리 떨어진 네 골목의 방향이 하나로 이어졌다!"],reward:"낡은 지도 조각",cash:370},
 ];
 const questGroups=[
   {name:"골목 가로등 수리",ids:["lamp","lamp2","lamp3"]},
@@ -501,7 +501,7 @@ function interact(){if(inOffice){const px=player.x+player.w/2,py=player.y+player
 function renderDialogue(){const lines=activeEntity.currentLines;if(dialogueIndex>=lines.length){closeDialogue();return;}ui.dialogue.classList.remove("hidden");ui.speaker.textContent=activeEntity.name;ui.text.textContent=lines[dialogueIndex];ui.portrait.textContent=activeEntity.icon;ui.portrait.style.setProperty("--portrait",activeEntity.color);}
 function nextDialogue(){if(!activeEntity)return;dialogueIndex++;renderDialogue();}
 function closeDialogue(){activeEntity=null;ui.dialogue.classList.add("hidden");updateProgress();}
-function renderQuestList(){const active=questGroups.filter(q=>q.ids.some(id=>startedEvents.has(id))&&!q.ids.every(id=>completedEvents.has(id)));ui.questList.replaceChildren();if(!active.length){const li=document.createElement("li");li.className="quest-empty";li.textContent="아직 받은 미션이 없습니다.";ui.questList.appendChild(li);return;}active.forEach(q=>{const done=q.ids.filter(id=>completedEvents.has(id)).length,li=document.createElement("li");li.textContent=q.ids.length>1?`${q.name} ${done}/${q.ids.length}`:q.name;ui.questList.appendChild(li);});}
+function renderQuestList(){const active=questGroups.filter(q=>q.ids.some(id=>startedEvents.has(id))&&!q.ids.every(id=>completedEvents.has(id)));ui.questList.replaceChildren();if(!active.length){const li=document.createElement("li");li.className="quest-empty";li.textContent="아직 받은 미션이 없습니다.";ui.questList.appendChild(li);return;}active.forEach(q=>{const done=q.ids.filter(id=>completedEvents.has(id)).length,remaining=q.ids.filter(id=>!completedEvents.has(id)).reduce((sum,id)=>sum+(events.find(e=>e.id===id)?.cash||0),0),li=document.createElement("li");li.textContent=`${q.name}${q.ids.length>1?` ${done}/${q.ids.length}`:""} · 남은 보상 ₩${remaining.toLocaleString("ko-KR")}`;ui.questList.appendChild(li);});}
 function updateProgress(){ui.met.textContent=met.size;ui.eventCount.textContent=completedEvents.size;renderQuestList();if(inOffice){ui.mission.textContent=bossEncountered?"임씨 자리를 찾아 컴퓨터를 켜자.":"사무실 통로를 지나 임씨 자리로 가자.";return;}if(inBuilding){ui.mission.textContent=`${currentBuilding?.b.name||"건물"} 내부 · 회복약과 방어구를 직접 찾아보자.`;return;}const active=events.find(e=>eventIsActive(e));if(money>=busStop.fare){ui.mission.textContent="버스비를 모았다! 정류장에서 버스를 타고 IMC 회사로 가자.";return;}if(active){ui.mission.textContent=`${active.name} · 버스비 ₩${money.toLocaleString("ko-KR")}/₩${busStop.fare.toLocaleString("ko-KR")}`;return;}ui.mission.textContent=`NPC에게 미션을 받아 버스비 모으기 · ₩${money.toLocaleString("ko-KR")}/₩${busStop.fare.toLocaleString("ko-KR")}`;}
 function showToast(message){ui.toast.textContent=message;ui.toast.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>ui.toast.classList.remove("show"),1400);}
 function resetProgress(){
