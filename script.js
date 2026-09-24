@@ -90,7 +90,7 @@ const hazards=[
   {id:"quiz",name:"문제 악당",x:88,y:76,color:"#33434e",icon:"?",kind:"quiz",range:54,cooldown:0},
 ];
 const hazardStarts=hazards.map(h=>({x:h.x,y:h.y}));
-const attackableIds=new Set(["yang","kang","ha","yook","bong"]);
+const attackableIds=new Set(["yang","kang","ha","yook","jung","bong"]);
 const sewers=[{x:28,y:26},{x:99,y:54}], bike={x:20,y:36,taken:false};
 const fartTrails=[],droppings=[];
 const quizQuestions=[
@@ -105,7 +105,7 @@ const quizQuestions=[
 const player={x:8*TILE,y:12*TILE,w:20,h:26,speed:185,facing:"down",moving:false,walk:0};
 const camera={x:0,y:0},keys=new Set();
 let met=new Set(),startedEvents=new Set(),completedEvents=new Set(),items=new Set();
-let activeEntity=null,challenge=null,dialogueIndex=0,lastTime=performance.now(),toastTimer=0;
+let activeEntity=null,challenge=null,armorSwapItem=null,dialogueIndex=0,lastTime=performance.now(),toastTimer=0;
 let gameStarted=false,gameEnded=false,elapsed=0,playerName="임씨",stun=0,slow=0,bikeTime=0,confused=0,busBoarded=false;
 let shakeTime=0,mentalEffect=null,inOffice=false,inBuilding=false,bossEncountered=false,currentBuilding=null,currentRoomItems=[];
 let hp=100,equippedArmor=null,healingItems=0,money=0,attackTime=0,attackCooldown=0,yangAttached=0,yookDamageTimer=0;
@@ -121,7 +121,7 @@ const office={
   ],
 };
 const worldSolids=buildSolidRects();
-const ui={dialogue:document.querySelector("#dialogue"),speaker:document.querySelector("#speaker"),text:document.querySelector("#dialogueText"),portrait:document.querySelector("#portrait"),met:document.querySelector("#metCount"),total:document.querySelector("#npcCount"),eventCount:document.querySelector("#eventCount"),eventTotal:document.querySelector("#eventTotal"),hpText:document.querySelector("#hpText"),hpBar:document.querySelector("#hpBar"),armorText:document.querySelector("#armorText"),healItemText:document.querySelector("#healItemText"),moneyText:document.querySelector("#moneyText"),mission:document.querySelector("#missionText"),questList:document.querySelector("#questList"),toast:document.querySelector("#toast"),challenge:document.querySelector("#challenge"),challengeTitle:document.querySelector("#challengeTitle"),challengeText:document.querySelector("#challengeText"),challengeBar:document.querySelector("#challengeBar"),start:document.querySelector("#startScreen"),ending:document.querySelector("#endingScreen"),endingLabel:document.querySelector("#endingLabel"),endingTitle:document.querySelector("#endingTitle"),endingText:document.querySelector("#endingText"),endingChoices:document.querySelector("#endingChoices"),restart:document.querySelector("#restartGameButton"),clock:document.querySelector("#gameClock"),condition:document.querySelector("#conditionText"),mental:document.querySelector("#mentalWords")};
+const ui={dialogue:document.querySelector("#dialogue"),speaker:document.querySelector("#speaker"),text:document.querySelector("#dialogueText"),portrait:document.querySelector("#portrait"),met:document.querySelector("#metCount"),total:document.querySelector("#npcCount"),eventCount:document.querySelector("#eventCount"),eventTotal:document.querySelector("#eventTotal"),hpText:document.querySelector("#hpText"),hpBar:document.querySelector("#hpBar"),armorText:document.querySelector("#armorText"),healItemText:document.querySelector("#healItemText"),moneyText:document.querySelector("#moneyText"),fareMoneyText:document.querySelector("#fareMoneyText"),fareNeedText:document.querySelector("#fareNeedText"),fareBar:document.querySelector("#fareBar"),mission:document.querySelector("#missionText"),questList:document.querySelector("#questList"),toast:document.querySelector("#toast"),challenge:document.querySelector("#challenge"),challengeTitle:document.querySelector("#challengeTitle"),challengeText:document.querySelector("#challengeText"),challengeBar:document.querySelector("#challengeBar"),start:document.querySelector("#startScreen"),ending:document.querySelector("#endingScreen"),endingLabel:document.querySelector("#endingLabel"),endingTitle:document.querySelector("#endingTitle"),endingText:document.querySelector("#endingText"),endingChoices:document.querySelector("#endingChoices"),restart:document.querySelector("#restartGameButton"),clock:document.querySelector("#gameClock"),condition:document.querySelector("#conditionText"),mental:document.querySelector("#mentalWords")};
 ui.total.textContent=npcs.length;ui.eventTotal.textContent=events.length;
 
 function rectsOverlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
@@ -222,10 +222,10 @@ function startSewer(index){
   challenge={mode:"escape",index:0,sequence:arrows,time:16,title:"하수구",onSuccess:()=>{sewers[index].escaped=true;showToast("사다리를 찾아 하수구에서 탈출했다!");},onFail:()=>showEnding("하수구 엔딩","어둠 속에서 사다리를 찾지 못했다.","BAD END")};
   showChallenge("하수구에 빠졌다!","방향 순서를 보고 천천히 입력하세요.");
 }
-function updateHpHud(){ui.hpText.textContent=Math.ceil(hp);ui.hpBar.style.width=`${Math.max(0,hp)}%`;ui.armorText.textContent=equippedArmor?`${equippedArmor.name} ${Math.ceil(equippedArmor.durability)}`:"없음";ui.healItemText.textContent=healingItems;ui.moneyText.textContent=`₩${money.toLocaleString("ko-KR")}`;}
+function updateHpHud(){ui.hpText.textContent=Math.ceil(hp);ui.hpBar.style.width=`${Math.max(0,hp)}%`;ui.armorText.textContent=equippedArmor?`${equippedArmor.name} ${Math.ceil(equippedArmor.durability)}`:"없음";ui.healItemText.textContent=healingItems;ui.moneyText.textContent=`₩${money.toLocaleString("ko-KR")}`;ui.fareNeedText.textContent=`₩${busStop.fare.toLocaleString("ko-KR")}`;ui.fareMoneyText.textContent=busBoarded?"지불 완료":`₩${money.toLocaleString("ko-KR")}`;ui.fareBar.style.width=`${busBoarded?100:Math.min(100,money/busStop.fare*100)}%`;}
 function takeDamage(amount,source,notify=true){if(gameEnded)return;const absorbed=equippedArmor?Math.min(equippedArmor.durability,amount):0;if(equippedArmor){equippedArmor.durability-=absorbed;if(equippedArmor.durability<=0)equippedArmor=null;}const damage=amount-absorbed;hp=Math.max(0,hp-damage);shakeTime=Math.max(shakeTime,.3);updateHpHud();if(notify)showToast(absorbed?`${source}! 방어구 ${absorbed} 소모 · HP -${damage}`:`${source} 공격! HP -${damage}`);if(hp<=0)showEnding("데드 엔딩",`${source}의 공격으로 임씨의 HP가 0이 되었다.`,"DEAD END");}
 function useHealingItem(){if(gameEnded||activeEntity||challenge)return;if(healingItems<=0){showToast("보유한 회복약이 없다.");return;}if(hp>=100){showToast("HP가 이미 가득 찼다.");return;}healingItems--;const before=hp;hp=Math.min(100,hp+35);updateHpHud();showToast(`회복약 사용! HP +${hp-before}`);}
-function calmHazard(h,message){h.rage=false;h.rude=false;h.rageHits=0;h.attackCooldown=5;h.cooldown=Math.max(h.cooldown||0,5);delete h.attached;if(message)showToast(message);}
+function calmHazard(h,message){h.rage=false;h.rude=false;h.rageHits=0;h.attackCooldown=5;h.cooldown=Math.max(h.cooldown||0,5);delete h.rageDelay;delete h.attached;if(message)showToast(message);}
 function showKangQuestion(h){
   if(h.questionAsked)return;h.questionAsked=true;mentalEffect=null;shakeTime=0;
   gameEnded=true;keys.clear();ui.ending.classList.remove("hidden");ui.endingLabel.textContent="강씨의 질문";ui.endingTitle.textContent="임씨 잘못했어?";ui.endingText.textContent="두 번 맞은 강씨가 스매시를 멈추고 대답을 기다린다.";ui.endingChoices.replaceChildren();ui.restart.style.display="none";
@@ -240,9 +240,10 @@ function playerAttack(){
     if(h.rageHits>=2){showKangQuestion(h);return;}
     h.attackCooldown=.7;return;
   }
-  if(h.id==="yang")showToast("양씨가 화가 나서 무서운 속도로 달려온다!");
+  if(h.id==="yang"){h.rageDelay=2;showToast("양씨가 화를 참다가 2초 뒤 쫓아오기 시작한다!");}
   if(h.id==="ha")showToast("하씨: 뭐하는거야?");
   if(h.id==="yook"){yookDamageTimer=.25;showToast("육씨가 분노해 주변 공기를 오염시킨다!");}
+  if(h.id==="jung")showToast("정영현이 화가 나서 임씨를 쫓아오기 시작한다!");
   if(h.id==="bong")showToast("봉씨가 근육질로 변했다!");
 }
 function updateRageHazard(h,d,dt,px,py){
@@ -253,13 +254,14 @@ function updateRageHazard(h,d,dt,px,py){
   if(h.id==="ha"){moveActor(h,px,py,dt,335);if(d<35)showEnding("화면 밖 탈출 엔딩","하씨가 ‘뭐하는거야?’라고 외치며 지건을 날렸다. 임씨는 화면 밖까지 날아갔다.","ESCAPE END");return;}
   if(h.id==="kang"){moveActor(h,px,py,dt,h.rude?350:245);if(d<37&&h.attackCooldown<=0){h.attackCooldown=h.rude?.38:.8;takeDamage(10,"강씨의 스매시");const dx=(px-h.x*TILE)/(d||1),dy=(py-h.y*TILE)/(d||1);tryMove(dx*30,dy*30);}return;}
   if(h.id==="yook"){moveActor(h,px,py,dt,255);if(d<170){yookDamageTimer-=dt;while(yookDamageTimer<=0&&!gameEnded){takeDamage(3,"육씨의 독성 방귀",false);yookDamageTimer+=.25;}}else yookDamageTimer=.25;return;}
+  if(h.id==="jung"){if(d>220){calmHazard(h,"정영현에게서 멀리 도망쳐 벗어났다.");return;}moveActor(h,px,py,dt,225);if(d<38&&h.attackCooldown<=0){h.attackCooldown=1;takeDamage(10,"정영현의 엉덩이 만지기·때리기");}return;}
   if(h.id==="bong"){if(d>150){calmHazard(h,"봉씨에게서 150px 이상 벗어나 도망쳤다.");return;}moveActor(h,px,py,dt,155);if(d<38&&h.attackCooldown<=0){h.attackCooldown=1.25;takeDamage(30,"근육질 봉씨의 크리티컬");const dx=(px-h.x*TILE)/(d||1),dy=(py-h.y*TILE)/(d||1);tryMove(dx*55,dy*55);}}
 }
 function updateHazards(dt){
   const px=player.x+player.w/2,py=player.y+player.h/2;
   hazards.forEach((h,i)=>{
-    h.cooldown=Math.max(0,h.cooldown-dt);h.attackCooldown=Math.max(0,(h.attackCooldown||0)-dt);const d=Math.hypot(px-h.x*TILE,py-h.y*TILE);
-    if(h.rage||h.attached){updateRageHazard(h,d,dt,px,py);return;}
+    h.cooldown=Math.max(0,h.cooldown-dt);h.attackCooldown=Math.max(0,(h.attackCooldown||0)-dt);h.rageDelay=Math.max(0,(h.rageDelay||0)-dt);const d=Math.hypot(px-h.x*TILE,py-h.y*TILE);
+    if(h.rage||h.attached){if(h.rageDelay>0)return;updateRageHazard(h,d,dt,px,py);return;}
     if(["chase","chaseHard","confuse"].includes(h.kind)&&d<h.range)moveActor(h,px,py,dt,h.kind==="chaseHard"?115:78);
     if(h.kind==="fart"){
       h.wander=(h.wander||0)+dt;const tx=(70+Math.sin(h.wander*.5)*9)*TILE,ty=(55+Math.cos(h.wander*.35)*7)*TILE;moveActor(h,tx,ty,dt,40);
@@ -397,10 +399,11 @@ function nearbyRoomItem(){const px=player.x+player.w/2,py=player.y+player.h/2;re
 function nearRoomExit(){return Math.hypot(player.x+player.w/2-room.exit.x,player.y+player.h/2-room.exit.y)<62;}
 function removeRoomItem(item){lootedBuildingItems.add(item.id);currentRoomItems=currentRoomItems.filter(found=>found.id!==item.id);updateHpHud();}
 function showArmorSwap(item){
-  gameEnded=true;keys.clear();ui.ending.classList.remove("hidden");ui.endingLabel.textContent="방어구 발견";ui.endingTitle.textContent="방어구를 교체할까요?";ui.endingText.textContent=`현재: ${equippedArmor.name} (${Math.ceil(equippedArmor.durability)})\n발견: ${item.armor.name} (${item.armor.max})`;
+  armorSwapItem=item;gameEnded=true;keys.clear();ui.ending.classList.remove("hidden");ui.endingLabel.textContent="방어구 발견";ui.endingTitle.textContent="방어구를 교체할까요?";ui.endingText.textContent=`현재: ${equippedArmor.name} (${Math.ceil(equippedArmor.durability)})\n발견: ${item.armor.name} (${item.armor.max})\n\n1: 교체하기 · 2: 그대로 두기`;
   ui.endingChoices.replaceChildren();ui.restart.style.display="none";
-  [["교체하기",true],["그대로 두기",false]].forEach(([label,replace])=>{const button=document.createElement("button");button.textContent=label;button.addEventListener("click",()=>{if(replace){equippedArmor={...item.armor,durability:item.armor.max};removeRoomItem(item);showToast(`${item.armor.name}(으)로 교체했다.`);}ui.ending.classList.add("hidden");gameEnded=false;updateHpHud();});ui.endingChoices.appendChild(button);});
+  [["1 · 교체하기",true],["2 · 그대로 두기",false]].forEach(([label,replace])=>{const button=document.createElement("button");button.textContent=label;button.addEventListener("click",()=>resolveArmorSwap(replace));ui.endingChoices.appendChild(button);});
 }
+function resolveArmorSwap(replace){const item=armorSwapItem;if(!item)return;if(replace){equippedArmor={...item.armor,durability:item.armor.max};removeRoomItem(item);showToast(`${item.armor.name}(으)로 교체했다.`);}armorSwapItem=null;ui.ending.classList.add("hidden");gameEnded=false;updateHpHud();}
 function pickupRoomItem(item){
   if(item.kind==="heal"){healingItems++;removeRoomItem(item);showToast("회복약을 주웠다! 1번 칸에서 사용할 수 있다.");return;}
   if(equippedArmor){showArmorSwap(item);return;}
@@ -556,8 +559,8 @@ function randomizeBuildingLoot(){
 function resetProgress(){
   met=new Set();startedEvents=new Set();completedEvents=new Set();items=new Set();lootedBuildingItems=new Set();randomizeBuildingLoot();
   const cat=events.find(e=>e.id==="cat");cat.x=66.2;cat.y=15.8;
-  hazards.forEach((h,i)=>{h.x=hazardStarts[i].x;h.y=hazardStarts[i].y;h.cooldown=0;delete h.wander;delete h.drop;delete h.rage;delete h.rude;delete h.rageHits;delete h.attackCooldown;delete h.questionAsked;delete h.attached;});
-  sewers.forEach(s=>delete s.escaped);fartTrails.length=0;droppings.length=0;keys.clear();activeEntity=null;challenge=null;ui.dialogue.classList.add("hidden");hideChallenge();ui.mental.replaceChildren();
+  hazards.forEach((h,i)=>{h.x=hazardStarts[i].x;h.y=hazardStarts[i].y;h.cooldown=0;delete h.wander;delete h.drop;delete h.rage;delete h.rude;delete h.rageHits;delete h.rageDelay;delete h.attackCooldown;delete h.questionAsked;delete h.attached;});
+  sewers.forEach(s=>delete s.escaped);fartTrails.length=0;droppings.length=0;keys.clear();activeEntity=null;challenge=null;armorSwapItem=null;ui.dialogue.classList.add("hidden");hideChallenge();ui.mental.replaceChildren();
 }
 
 function rankingText(){
@@ -567,7 +570,7 @@ function recordRanking(){
   try{const ranks=JSON.parse(localStorage.getItem(RANK_KEY)||"[]");ranks.push({name:playerName,time:elapsed});ranks.sort((a,b)=>a.time-b.time);localStorage.setItem(RANK_KEY,JSON.stringify(ranks.slice(0,20)));}catch{}
 }
 function showEnding(title,text,label="ENDING",clear=false){
-  gameEnded=true;keys.clear();challenge=null;hideChallenge();ui.ending.classList.remove("hidden");ui.endingLabel.textContent=label;ui.endingTitle.textContent=title;if(clear)recordRanking();ui.endingText.textContent=text+(clear?rankingText():"");ui.endingText.style.whiteSpace="pre-line";ui.endingChoices.replaceChildren();ui.restart.style.display="inline-block";
+  gameEnded=true;keys.clear();challenge=null;armorSwapItem=null;hideChallenge();ui.ending.classList.remove("hidden");ui.endingLabel.textContent=label;ui.endingTitle.textContent=title;if(clear)recordRanking();ui.endingText.textContent=text+(clear?rankingText():"");ui.endingText.style.whiteSpace="pre-line";ui.endingChoices.replaceChildren();ui.restart.style.display="inline-block";
 }
 function enterOffice(){busBoarded=true;inBuilding=false;inOffice=true;bossEncountered=false;camera.x=0;camera.y=0;player.x=70;player.y=500;keys.clear();updateProgress();showToast("버스를 타고 IMC 회사에 도착했다. 이제 임씨 자리에서 컴퓨터를 켜자.");}
 function showBossQuestion(){
@@ -578,7 +581,7 @@ function startGame(){
   const entered=document.querySelector("#playerName").value.trim();playerName=entered||"임씨";resetProgress();player.x=8*TILE;player.y=12*TILE;elapsed=0;hp=100;equippedArmor=null;healingItems=0;money=0;stun=slow=bikeTime=confused=shakeTime=attackTime=attackCooldown=yangAttached=yookDamageTimer=0;mentalEffect=null;bike.taken=false;busBoarded=false;inOffice=false;inBuilding=false;currentBuilding=null;currentRoomItems=[];bossEncountered=false;gameEnded=false;gameStarted=true;ui.start.classList.add("hidden");ui.ending.classList.add("hidden");updateHpHud();updateClock();updateProgress();showToast(`${playerName}, 오전 7시 30분 출발! 미션으로 버스비를 벌어 9시까지 출근하자.`);
 }
 
-addEventListener("keydown",e=>{const key=e.key.toLowerCase();if(["arrowup","arrowdown","arrowleft","arrowright"," "].includes(key))e.preventDefault();if(challenge){handleChallengeKey(key,e.repeat);return;}if(!gameStarted||gameEnded)return;if(key==="1"&&!e.repeat){useHealingItem();return;}if(key==="f"&&!e.repeat){playerAttack();return;}if((key==="e"||key===" ")&&!e.repeat)activeEntity?nextDialogue():interact();keys.add(key);});
+addEventListener("keydown",e=>{const key=e.key.toLowerCase();if(["arrowup","arrowdown","arrowleft","arrowright"," "].includes(key))e.preventDefault();if(armorSwapItem&&!e.repeat){if(key==="1")resolveArmorSwap(true);else if(key==="2")resolveArmorSwap(false);return;}if(challenge){handleChallengeKey(key,e.repeat);return;}if(!gameStarted||gameEnded)return;if(key==="1"&&!e.repeat){useHealingItem();return;}if(key==="f"&&!e.repeat){playerAttack();return;}if((key==="e"||key===" ")&&!e.repeat)activeEntity?nextDialogue():interact();keys.add(key);});
 addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));document.querySelector("#nextButton").addEventListener("click",nextDialogue);
 document.querySelector("#startGameButton").addEventListener("click",startGame);document.querySelector("#playerName").addEventListener("keydown",e=>{if(e.key==="Enter")startGame();});document.querySelector("#inventorySlot1").addEventListener("click",useHealingItem);ui.restart.addEventListener("click",()=>location.reload());
 updateHpHud();updateProgress();updateClock();

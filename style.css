@@ -67,6 +67,16 @@ canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; 
 .hp-track span { display: block; width: 100%; height: 100%; background: #d9554c; transition: width .15s; }
 .item-row { display: flex; justify-content: space-between; gap: 8px; margin-top: 5px; color: #cfc8b8; font-size: 9px; }
 .item-row strong { color: #8ed3df; }
+.fare-panel {
+  position: absolute; top: 14px; left: 50%; translate: -50% 0; z-index: 6;
+  width: 210px; padding: 8px 11px;
+  border: 2px solid #101210; background: #171a1ddd;
+  box-shadow: 3px 3px 0 #0006; text-align: center; font-size: 10px;
+}
+.fare-panel > span { margin-right: 7px; color: var(--accent); font-weight: 900; }
+.fare-panel strong { color: #f3ead7; }
+.fare-track { height: 6px; margin-top: 5px; border: 1px solid #080908; background: #343934; overflow: hidden; }
+.fare-track span { display: block; width: 0; height: 100%; background: #73b9c7; transition: width .18s; }
 .quest-panel {
   position: absolute; top: 105px; left: 14px; z-index: 6;
   width: 220px; padding: 10px 12px;
@@ -192,6 +202,7 @@ button.inventory-slot { cursor: pointer; }
   .topbar { align-items: flex-start; padding: 12px; }
   .mission { max-width: 62%; }
   .hud-right { display: none; }
+  .fare-panel { top: 8px; width: 138px; padding: 5px 7px; font-size: 8px; }
   .quest-panel { top: 118px; left: 8px; width: 160px; max-height: 120px; overflow: auto; }
   .minimap-panel { top: 8px; right: 8px; bottom: auto; width: 122px; padding: 6px; }
   .minimap-panel canvas { width: 106px; height: 68px; }
