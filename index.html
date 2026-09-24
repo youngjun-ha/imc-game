@@ -29,6 +29,13 @@
             <p>동네 사람들의 미션을 해결해 버스비를 모으고, 버스를 타고 오전 9시까지 회사에 출근하세요.</p>
             <label for="playerName">플레이어 이름</label>
             <input id="playerName" maxlength="12" placeholder="이름을 입력하세요" />
+            <div class="start-controls">
+              <strong>조작 방법</strong>
+              <span>이동 WASD / 방향키</span>
+              <span>상호작용 E</span>
+              <span>공격 Space</span>
+              <span>아이템 1~4</span>
+            </div>
             <button id="startGameButton" type="button">출근 시작</button>
           </div>
         </div>
@@ -63,21 +70,16 @@
           <ul id="questList"><li class="quest-empty">아직 받은 미션이 없습니다.</li></ul>
         </aside>
 
-        <div class="hud hud-right">
-          <div class="hud-label">조작</div>
-          <div>이동 WASD / 방향키</div>
-          <div>상호작용 E</div>
-          <div>공격 F</div>
-          <div>아이템 사용 1~4</div>
-          <div class="clock" id="gameClock">08:00</div>
-          <div id="conditionText">정상</div>
-        </div>
-
         <aside class="minimap-panel" aria-label="미니맵">
           <div class="hud-label">미니맵</div>
           <canvas id="minimapCanvas" width="196" height="126"></canvas>
           <div class="minimap-legend"><span class="me-dot"></span>나 <span class="quest-dot"></span>미션</div>
         </aside>
+
+        <div class="clock-panel">
+          <div class="clock" id="gameClock">08:00</div>
+          <div id="conditionText">정상</div>
+        </div>
 
         <div class="inventory-bar" aria-label="아이템 창">
           <button class="inventory-slot" id="inventorySlot1" type="button"><kbd>1</kbd><span>회복약</span><strong id="healItemText">0</strong></button>

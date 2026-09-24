@@ -105,7 +105,7 @@ const quizQuestions=[
 const player={x:8*TILE,y:12*TILE,w:20,h:26,speed:185,facing:"down",moving:false,walk:0};
 const camera={x:0,y:0},keys=new Set();
 let met=new Set(),startedEvents=new Set(),completedEvents=new Set(),items=new Set();
-let activeEntity=null,challenge=null,armorSwapItem=null,kangQuestionTarget=null,dialogueIndex=0,lastTime=performance.now(),toastTimer=0;
+let activeEntity=null,challenge=null,armorSwapItem=null,kangQuestionTarget=null,bossQuestionActive=false,dialogueIndex=0,lastTime=performance.now(),toastTimer=0;
 let gameStarted=false,gameEnded=false,elapsed=0,playerName="임씨",stun=0,slow=0,bikeTime=0,confused=0,busBoarded=false;
 let shakeTime=0,mentalEffect=null,inOffice=false,inBuilding=false,bossEncountered=false,currentBuilding=null,currentRoomItems=[];
 let hp=100,equippedArmor=null,healingItems=0,money=0,attackTime=0,attackCooldown=0,yangAttached=0,yookDamageTimer=0;
@@ -244,7 +244,7 @@ function playerAttack(){
   if(h.id==="yang")h.rageDelay=2;
   if(h.id==="ha")showToast("하씨: 뭐하는거야?");
   if(h.id==="yook"){yookDamageTimer=.25;showToast("육씨가 분노해 주변 공기를 오염시킨다!");}
-  if(h.id==="jung"){delete h.returning;delete h.returnTime;h.hitPause=0;showToast("정영현이 화가 나서 임씨를 쫓아오기 시작한다!");}
+  if(h.id==="jung"){delete h.returning;delete h.returnTime;h.hitPause=0;showToast("도망가서 그로부터 엉덩이를 지키세요!");}
   if(h.id==="bong")showToast("봉씨가 근육질로 변했다!");
 }
 function updateRageHazard(h,d,dt,px,py){
@@ -256,9 +256,9 @@ function updateRageHazard(h,d,dt,px,py){
   if(h.id==="kang"){moveActor(h,px,py,dt,h.rude?350:245);if(d<37&&h.attackCooldown<=0){h.attackCooldown=h.rude?.38:.8;takeDamage(10,"강씨의 스매시");h.smashHits=(h.smashHits||0)+1;if(h.smashHits>=2&&!gameEnded){showKangQuestion(h);return;}const dx=(px-h.x*TILE)/(d||1),dy=(py-h.y*TILE)/(d||1);tryMove(dx*30,dy*30);}return;}
   if(h.id==="yook"){moveActor(h,px,py,dt,255);if(d<170){yookDamageTimer-=dt;while(yookDamageTimer<=0&&!gameEnded){takeDamage(3,"육씨의 독성 방귀",false);yookDamageTimer+=.25;}}else yookDamageTimer=.25;return;}
   if(h.id==="jung"){
-    if(d>200){h.rage=false;h.rude=false;h.hitPause=0;h.returning=true;h.returnTime=0;h.attackCooldown=1;showToast("정영현에게서 200px 이상 벗어났다. 정영현이 원래 자리로 돌아간다.");return;}
+    if(d>175){h.rage=false;h.rude=false;h.hitPause=0;h.returning=true;h.returnTime=0;h.attackCooldown=1;showToast("정영현이 추격을 포기하고 원래 자리로 돌아간다.");return;}
     if(h.hitPause>0)return;moveActor(h,px,py,dt,170);
-    if(d<38&&h.attackCooldown<=0){h.attackCooldown=1;h.hitPause=.2;takeDamage(10,"정영현의 엉덩이 때리기");}return;
+    if(d<38&&h.attackCooldown<=0){h.attackCooldown=1;h.hitPause=.3;takeDamage(10,"정영현의 엉덩이 때리기");}return;
   }
   if(h.id==="bong"){if(d>150){calmHazard(h,"봉씨에게서 150px 이상 벗어나 도망쳤다.");return;}moveActor(h,px,py,dt,155);if(d<38&&h.attackCooldown<=0){h.attackCooldown=1.25;takeDamage(30,"근육질 봉씨의 크리티컬");const dx=(px-h.x*TILE)/(d||1),dy=(py-h.y*TILE)/(d||1);tryMove(dx*55,dy*55);}}
 }
@@ -566,7 +566,7 @@ function resetProgress(){
   met=new Set();startedEvents=new Set();completedEvents=new Set();items=new Set();lootedBuildingItems=new Set();randomizeBuildingLoot();
   const cat=events.find(e=>e.id==="cat");cat.x=66.2;cat.y=15.8;
   hazards.forEach((h,i)=>{h.x=hazardStarts[i].x;h.y=hazardStarts[i].y;h.cooldown=0;delete h.wander;delete h.drop;delete h.rage;delete h.rude;delete h.rageHits;delete h.smashHits;delete h.rageDelay;delete h.hitPause;delete h.returning;delete h.returnTime;delete h.attackCooldown;delete h.questionAsked;delete h.attached;});
-  sewers.forEach(s=>delete s.escaped);fartTrails.length=0;droppings.length=0;keys.clear();activeEntity=null;challenge=null;armorSwapItem=null;kangQuestionTarget=null;ui.dialogue.classList.add("hidden");hideChallenge();ui.mental.replaceChildren();
+  sewers.forEach(s=>delete s.escaped);fartTrails.length=0;droppings.length=0;keys.clear();activeEntity=null;challenge=null;armorSwapItem=null;kangQuestionTarget=null;bossQuestionActive=false;ui.dialogue.classList.add("hidden");hideChallenge();ui.mental.replaceChildren();
 }
 
 function rankingText(){
@@ -576,18 +576,19 @@ function recordRanking(){
   try{const ranks=JSON.parse(localStorage.getItem(RANK_KEY)||"[]");ranks.push({name:playerName,time:elapsed});ranks.sort((a,b)=>a.time-b.time);localStorage.setItem(RANK_KEY,JSON.stringify(ranks.slice(0,20)));}catch{}
 }
 function showEnding(title,text,label="ENDING",clear=false){
-  gameEnded=true;keys.clear();challenge=null;armorSwapItem=null;kangQuestionTarget=null;hideChallenge();ui.ending.classList.remove("hidden");ui.endingLabel.textContent=label;ui.endingTitle.textContent=title;if(clear)recordRanking();ui.endingText.textContent=text+(clear?rankingText():"");ui.endingText.style.whiteSpace="pre-line";ui.endingChoices.replaceChildren();ui.restart.style.display="inline-block";
+  gameEnded=true;keys.clear();challenge=null;armorSwapItem=null;kangQuestionTarget=null;bossQuestionActive=false;hideChallenge();ui.ending.classList.remove("hidden");ui.endingLabel.textContent=label;ui.endingTitle.textContent=title;if(clear)recordRanking();ui.endingText.textContent=text+(clear?rankingText():"");ui.endingText.style.whiteSpace="pre-line";ui.endingChoices.replaceChildren();ui.restart.style.display="inline-block";
 }
 function enterOffice(){busBoarded=true;inBuilding=false;inOffice=true;bossEncountered=false;camera.x=0;camera.y=0;player.x=70;player.y=500;keys.clear();updateProgress();showToast("버스를 타고 IMC 회사에 도착했다. 이제 임씨 자리에서 컴퓨터를 켜자.");}
 function showBossQuestion(){
-  gameEnded=true;keys.clear();ui.ending.classList.remove("hidden");ui.endingLabel.textContent="상사에게 붙잡혔다";ui.endingTitle.textContent="곤란한 업무 질문";ui.endingText.textContent="상사: 고객에게 보낸 회의 자료에서 숫자가 잘못된 걸 이제 발견했네. 자네라면 어떻게 하겠나?";ui.endingChoices.replaceChildren();ui.restart.style.display="none";
-  [["어쩔 수 없지",true],["제가 먼저 고객에게 상황을 설명하고 양해를 구하겠습니다",false],["제가 바로 수정해서 사과와 함께 다시 보내겠습니다",false],["먼저 오류를 확인하고 팀과 해결 방법을 찾겠습니다",false]].forEach(([text,correct])=>{const b=document.createElement("button");b.textContent=text;b.addEventListener("click",()=>{if(correct){bossEncountered=true;gameEnded=false;ui.ending.classList.add("hidden");updateProgress();showToast("상사: ...그래, 일단 가보게.");}else showEnding("회사 밖으로 쫓겨난 엔딩",`상사: 너 누구야?\n${playerName}은 회사 밖으로 쫓겨났다.`,"BAD END");});ui.endingChoices.appendChild(b);});
+  bossQuestionActive=true;gameEnded=true;keys.clear();ui.ending.classList.remove("hidden");ui.endingLabel.textContent="상사에게 붙잡혔다";ui.endingTitle.textContent="곤란한 업무 질문";ui.endingText.textContent="상사: 고객에게 보낸 회의 자료에서 숫자가 잘못된 걸 이제 발견했네. 자네라면 어떻게 하겠나?";ui.endingChoices.replaceChildren();ui.restart.style.display="none";
+  [["1 · 어쩔 수 없지",true],["2 · 제가 먼저 고객에게 상황을 설명하고 양해를 구하겠습니다",false],["3 · 제가 바로 수정해서 사과와 함께 다시 보내겠습니다",false],["4 · 먼저 오류를 확인하고 팀과 해결 방법을 찾겠습니다",false]].forEach(([text,correct])=>{const b=document.createElement("button");b.textContent=text;b.addEventListener("click",()=>resolveBossQuestion(correct));ui.endingChoices.appendChild(b);});
 }
+function resolveBossQuestion(correct){if(!bossQuestionActive)return;bossQuestionActive=false;if(correct){bossEncountered=true;gameEnded=false;ui.ending.classList.add("hidden");updateProgress();showToast("상사: ...그래, 일단 가보게.");}else showEnding("회사 밖으로 쫓겨난 엔딩",`상사: 너 누구야?\n${playerName}은 회사 밖으로 쫓겨났다.`,"BAD END");}
 function startGame(){
   const entered=document.querySelector("#playerName").value.trim();playerName=entered||"임씨";resetProgress();player.x=8*TILE;player.y=12*TILE;elapsed=0;hp=100;equippedArmor=null;healingItems=0;money=0;stun=slow=bikeTime=confused=shakeTime=attackTime=attackCooldown=yangAttached=yookDamageTimer=0;mentalEffect=null;bike.taken=false;busBoarded=false;inOffice=false;inBuilding=false;currentBuilding=null;currentRoomItems=[];bossEncountered=false;gameEnded=false;gameStarted=true;ui.start.classList.add("hidden");ui.ending.classList.add("hidden");updateHpHud();updateClock();updateProgress();showToast(`${playerName}, 오전 7시 30분 출발! 미션으로 버스비를 벌어 9시까지 출근하자.`);
 }
 
-addEventListener("keydown",e=>{const key=e.key.toLowerCase();if(["arrowup","arrowdown","arrowleft","arrowright"," "].includes(key))e.preventDefault();if(armorSwapItem&&!e.repeat){if(key==="1")resolveArmorSwap(true);else if(key==="2")resolveArmorSwap(false);return;}if(kangQuestionTarget&&!e.repeat){if(key==="1")resolveKangQuestion(true);else if(key==="2")resolveKangQuestion(false);return;}if(challenge){handleChallengeKey(key,e.repeat);return;}if(!gameStarted||gameEnded)return;if(key==="1"&&!e.repeat){useHealingItem();return;}if(key==="f"&&!e.repeat){playerAttack();return;}if(key==="e"&&!e.repeat)activeEntity?nextDialogue():interact();keys.add(key);});
+addEventListener("keydown",e=>{const key=e.key.toLowerCase();if(["arrowup","arrowdown","arrowleft","arrowright"," "].includes(key))e.preventDefault();if(armorSwapItem&&!e.repeat){if(key==="1")resolveArmorSwap(true);else if(key==="2")resolveArmorSwap(false);return;}if(kangQuestionTarget&&!e.repeat){if(key==="1")resolveKangQuestion(true);else if(key==="2")resolveKangQuestion(false);return;}if(bossQuestionActive&&!e.repeat){if(["1","2","3","4"].includes(key))resolveBossQuestion(key==="1");return;}if(challenge){handleChallengeKey(key,e.repeat);return;}if(!gameStarted||gameEnded)return;if(key==="1"&&!e.repeat){useHealingItem();return;}if(key===" "&&!e.repeat){playerAttack();return;}if(key==="e"&&!e.repeat)activeEntity?nextDialogue():interact();keys.add(key);});
 addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));document.querySelector("#nextButton").addEventListener("click",nextDialogue);
 document.querySelector("#startGameButton").addEventListener("click",startGame);document.querySelector("#playerName").addEventListener("keydown",e=>{if(e.key==="Enter")startGame();});document.querySelector("#inventorySlot1").addEventListener("click",useHealingItem);ui.restart.addEventListener("click",()=>location.reload());
 updateHpHud();updateProgress();updateClock();
