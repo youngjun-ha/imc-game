@@ -238,7 +238,7 @@ function playerAttack(){
   if(h.id==="kang"){
     h.rageHits=Math.min(2,(h.rageHits||0)+1);
     if(h.rageHits>=2){showKangQuestion(h);return;}
-    h.attackCooldown=.7;showToast("강씨 타격 1/2 · 가까이에서 F키를 한 번 더 누르세요!");return;
+    h.attackCooldown=.7;return;
   }
   if(h.id==="yang")showToast("양씨가 화가 나서 무서운 속도로 달려온다!");
   if(h.id==="ha")showToast("하씨: 뭐하는거야?");
