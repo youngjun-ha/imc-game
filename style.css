@@ -79,7 +79,7 @@ canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; 
 .quest-panel .quest-empty { color: var(--muted); padding-left: 0; }
 .quest-panel .quest-empty::before { content: ""; }
 .minimap-panel {
-  position: absolute; top: 112px; right: 14px; z-index: 6;
+  position: absolute; top: 145px; right: 14px; z-index: 6;
   width: 220px; padding: 9px 10px;
   border: 2px solid #101210; background: #171a1ddd;
   box-shadow: 3px 3px 0 #0006;
@@ -88,9 +88,17 @@ canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; 
 .minimap-legend { display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 4px; color: #c7c0b1; font-size: 9px; }
 .minimap-legend span { width: 7px; height: 7px; display: inline-block; margin-left: 5px; }
 .me-dot { background: #7dd8ff; }.quest-dot { background: #f2c14e; }
+.inventory-bar { position: absolute; left: 50%; bottom: 13px; translate: -50% 0; z-index: 5; display: flex; gap: 5px; }
+.inventory-slot { position: relative; width: 82px; height: 49px; padding: 6px 5px 4px; border: 2px solid #101210; background: #222724e8; color: #eee5d1; font: inherit; font-size: 9px; text-align: center; }
+button.inventory-slot { cursor: pointer; }
+.inventory-slot kbd { position: absolute; top: 2px; left: 3px; width: 14px; height: 14px; background: #f2c14e; color: #171717; font: bold 9px sans-serif; line-height: 14px; }
+.inventory-slot span { display: block; margin-top: 10px; }
+.inventory-slot strong { position: absolute; right: 5px; bottom: 3px; color: #8ed3df; font-size: 11px; }
+.inventory-slot.empty { color: #777e76; background: #191d1be8; }
 
 .dialogue {
   position: absolute;
+  z-index: 12;
   left: 4%; right: 4%; bottom: 4%;
   display: flex;
   gap: 16px;
@@ -135,6 +143,7 @@ canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; 
 
 .challenge {
   position: absolute;
+  z-index: 11;
   top: 76px;
   left: 50%;
   translate: -50% 0;
@@ -187,6 +196,8 @@ canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; 
   .minimap-panel { top: 8px; right: 8px; width: 148px; padding: 6px; }
   .minimap-panel canvas { width: 132px; height: 85px; }
   .minimap-legend { display: none; }
+  .inventory-bar { bottom: 5px; gap: 2px; }
+  .inventory-slot { width: 58px; height: 42px; }
   .dialogue { left: 3%; right: 3%; min-height: 115px; }
   .portrait { flex-basis: 60px; }
 }
