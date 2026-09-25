@@ -248,10 +248,10 @@ function showKangQuestion(h){
 }
 function resolveKangQuestion(apologize){const h=kangQuestionTarget;if(!h)return;kangQuestionTarget=null;ui.ending.classList.add("hidden");gameEnded=false;h.questionAsked=false;if(apologize){calmHazard(h,"강씨가 사과를 받고 공격을 멈췄다.");h.questionStage=0;h.requiredSmashes=2;}else{h.questionStage=(h.questionStage||0)+1;h.requiredSmashes=2+h.questionStage;h.rage=true;h.rude=true;h.rageHits=0;h.smashHits=0;h.attackCooldown=0;showToast(`강씨가 ${h.requiredSmashes}번의 스매시를 준비한다!`);}}
 function startHaCutscene(h){
-  keys.clear();challenge=null;hideChallenge();activeEntity=null;ui.dialogue.classList.add("hidden");h.rage=false;haCutscene={time:0,ha:h};gameEnded=true;showToast("하씨가 골목 격투가들을 불러냈다!");
+  keys.clear();challenge=null;hideChallenge();activeEntity=null;ui.dialogue.classList.add("hidden");h.rage=false;haCutscene={time:0,ha:h};gameEnded=true;showToast("하씨가 공격 자세를 잡았다!");
 }
 function updateHaCutscene(dt){
-  if(!haCutscene)return;haCutscene.time+=dt;if(haCutscene.time>=4.8){haCutscene=null;showEnding("화면 밖 퇴출 엔딩","하씨와 골목 격투가들의 필살기 연계에 얻어맞은 임씨가 화면 밖으로 날아갔다.","RING OUT");}
+  if(!haCutscene)return;haCutscene.time+=dt;if(haCutscene.time>=4.8){haCutscene=null;showEnding("화면 밖 퇴출 엔딩","하씨의 순간이동 난타와 날아차기에 얻어맞은 임씨가 화면 밖으로 날아갔다.","RING OUT");}
 }
 function playerAttack(){
   if(inOffice||inBuilding||activeEntity||challenge||gameEnded||attackCooldown>0)return;const px=player.x+player.w/2,py=player.y+player.h/2;attackTime=.18;attackCooldown=.22;
@@ -389,21 +389,26 @@ function drawHitEffects(){
 function drawCutsceneFighter(x,y,color,label,pose=0){
   const arm=pose%2?18:8,leg=pose%3?5:15;ctx.fillStyle="#0007";ctx.fillRect(x-24,y+42,48,9);ctx.fillStyle=color;ctx.fillRect(x-17,y-12,34,42);ctx.fillRect(x-27-arm,y-7,28+arm,11);ctx.fillRect(x+1,y-7,28+arm,11);ctx.fillStyle="#e4bb93";ctx.fillRect(x-13,y-35,26,24);ctx.fillStyle="#252323";ctx.fillRect(x-15,y-38,30,8);ctx.fillStyle=color;ctx.fillRect(x-16,y+28,12,28+leg);ctx.fillRect(x+4,y+28,12,43-leg);ctx.fillStyle="#fff";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.fillText(label,x,y+69);
 }
-function drawGuardingIm(x,y,launch=0,hit=false){
-  ctx.save();ctx.translate(x,y);if(launch)ctx.rotate(launch*7);ctx.fillStyle="#0007";ctx.fillRect(-25,44,50,9);ctx.fillStyle="#2c3541";ctx.fillRect(-15,27,12,30);ctx.fillRect(3,27,12,30);ctx.fillStyle="#4f7295";ctx.fillRect(-19,-13,38,42);ctx.fillStyle="#e4bb93";ctx.fillRect(-14,-38,28,25);ctx.fillStyle="#252525";ctx.fillRect(-16,-41,32,8);
-  if(!launch){ctx.fillStyle="#f2c14e";ctx.fillRect(-24,-5,29,10);ctx.fillRect(-5,-16,10,31);ctx.fillRect(5,-5,29,10);ctx.fillStyle="#d8e4e8";ctx.fillRect(-10,-10,20,20);}else{ctx.fillStyle="#e4bb93";ctx.fillRect(-28,-5,13,11);ctx.fillRect(15,-5,13,11);}if(hit){ctx.fillStyle="#fff2a2";ctx.fillRect(-31,-20,9,9);ctx.fillRect(23,-27,7,7);}ctx.fillStyle="#fff";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.fillText("임씨",0,75);ctx.restore();
+function drawPixelLimb(x,y,length,thickness,angle,color,fist=true){ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.fillStyle=color;ctx.fillRect(0,-thickness/2,length,thickness);if(fist){ctx.fillStyle="#e4bb93";ctx.fillRect(length-3,-thickness/2-2,9,thickness+4);}ctx.restore();}
+function drawHaAction(x,y,phase=0,kick=0,facing=1,alpha=1){
+  const punch=Math.sin(Math.min(1,phase)*Math.PI),windup=Math.sin(Math.min(1,phase)*Math.PI*.5);ctx.save();ctx.globalAlpha=alpha;ctx.translate(x,y);ctx.scale(facing,1);ctx.rotate(kick?-.18*kick:Math.sin(phase*Math.PI*2)*.035);ctx.fillStyle="#0007";ctx.fillRect(-25,44,50,9);
+  if(kick){drawPixelLimb(-9,27,38,12,1.78,"#a33e4c",false);drawPixelLimb(7,22,62+kick*38,15,-.08,"#a33e4c",true);drawPixelLimb(-10,-2,34,10,-2.5,"#a33e4c");drawPixelLimb(8,-4,32,10,-2.1,"#a33e4c");}
+  else{drawPixelLimb(-9,27,38,12,1.45+windup*.18,"#a33e4c",false);drawPixelLimb(7,27,38,12,1.68-windup*.12,"#a33e4c",false);drawPixelLimb(-11,-3,33,10,-2.45+punch*.7,"#a33e4c");drawPixelLimb(9,-5,30+punch*42,11,-.95+punch*.92,"#a33e4c");}
+  ctx.fillStyle="#a33e4c";ctx.fillRect(-18,-14,36,43);ctx.fillStyle="#e4bb93";ctx.fillRect(-14,-39,28,26);ctx.fillStyle="#252323";ctx.fillRect(-16,-42,32,9);ctx.fillStyle="#292126";ctx.fillRect(4,-28,4,3);ctx.restore();ctx.fillStyle="#fff";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.fillText("하씨",x,y+72);
 }
+function drawGuardingIm(x,y,launch=0,recoil=0){
+  ctx.save();ctx.translate(x+recoil*18,y-recoil*3);if(launch)ctx.rotate(launch*7);else ctx.rotate(recoil*.1);ctx.fillStyle="#0007";ctx.fillRect(-25,44,50,9);ctx.fillStyle="#2c3541";ctx.fillRect(-15,27,12,30);ctx.fillRect(3,27,12,30);ctx.fillStyle="#4f7295";ctx.fillRect(-19,-13,38,42);ctx.fillStyle="#e4bb93";ctx.fillRect(-14,-38,28,25);ctx.fillStyle="#252525";ctx.fillRect(-16,-41,32,8);
+  if(!launch){drawPixelLimb(-18,-3,38,11,.42,"#f2c14e");drawPixelLimb(18,-3,38,11,Math.PI-.42,"#f2c14e");ctx.fillStyle="#d8e4e8";ctx.fillRect(-12,-15,24,27);}else{drawPixelLimb(-16,-2,31,10,-2.55,"#e4bb93");drawPixelLimb(16,-2,31,10,-.6,"#e4bb93");}ctx.fillStyle="#fff";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.fillText("임씨",0,75);ctx.restore();
+}
+function drawCutsceneImpact(x,y,power){const size=12+power*20;ctx.fillStyle=`rgba(255,244,171,${.45+power*.55})`;ctx.fillRect(x-size-8,y-4,size,8);ctx.fillRect(x+8,y-4,size,8);ctx.fillRect(x-4,y-size-8,8,size);ctx.fillRect(x-4,y+8,8,size);ctx.fillStyle="#ff735f";ctx.fillRect(x-10-power*7,y-10-power*7,20+power*14,20+power*14);}
 function drawHaCutscene(){
-  const t=haCutscene.time,w=canvas.width,h=canvas.height,combo=Math.max(0,Math.min(16,Math.floor((t-.6)/.18)+1)),barrage=combo>0&&t<3.55,kick=Math.max(0,t-3.5),launch=Math.max(0,t-3.86);
+  const t=haCutscene.time,w=canvas.width,h=canvas.height,guardX=500,guardY=350,barrage=t>=.62&&t<3.5,cycle=barrage?(t-.62)/.29:0,combo=barrage?Math.min(10,Math.floor(cycle)+1):0,phase=cycle-Math.floor(cycle),hit=barrage?Math.pow(Math.sin(phase*Math.PI),3):0,kickProgress=Math.max(0,Math.min(1,(t-3.5)/.7)),launch=Math.max(0,t-4.04);
   ctx.fillStyle="#17131f";ctx.fillRect(0,0,w,h);for(let y=0;y<h;y+=32){ctx.fillStyle=y%64===0?"#272035":"#211a2c";ctx.fillRect(0,y,w,32);}ctx.fillStyle="#40344f";ctx.fillRect(0,390,w,186);ctx.fillStyle="#6f5369";for(let x=0;x<w;x+=48)ctx.fillRect(x,390,32,8);
-  ctx.save();if(barrage)ctx.translate((Math.random()-.5)*12,(Math.random()-.5)*9);const guardX=500,guardY=350,teleports=[[305,350],[695,350],[500,220],[360,270],[640,275],[430,400],[590,400]],spot=teleports[combo%teleports.length];
-  if(barrage){ctx.globalAlpha=.18;for(let i=1;i<=3;i++){const ghost=teleports[(combo-i+teleports.length)%teleports.length];drawCutsceneFighter(ghost[0],ghost[1],"#a33e4c","",combo-i);}ctx.globalAlpha=1;drawCutsceneFighter(spot[0],spot[1],"#a33e4c","하씨",combo);ctx.fillStyle="#ff735f";ctx.fillRect(guardX-42,guardY-8,84,12);ctx.fillRect(guardX-6,guardY-48,12,88);}
-  else if(kick>0){const hx=Math.min(470,120+kick*520),hy=330-kick*18;ctx.save();ctx.translate(hx,hy);ctx.rotate(-.12);drawCutsceneFighter(0,0,"#a33e4c","하씨",2);ctx.fillStyle="#e4bb93";ctx.fillRect(15,-5,95,15);ctx.fillStyle="#a33e4c";ctx.fillRect(14,-9,73,23);ctx.restore();}
-  else drawCutsceneFighter(250,350,"#a33e4c","하씨",0);
-  const imX=launch?guardX+launch*520:guardX,imY=launch?guardY-launch*105:guardY;drawGuardingIm(imX,imY,launch,barrage||kick>.55);
-  if(barrage){ctx.fillStyle="#fff1a6";ctx.font="bold 24px sans-serif";ctx.textAlign="center";ctx.fillText(combo%2?"퍽!":"쾅!",guardX+(combo%3-1)*42,235+(combo%4)*24);ctx.fillStyle="#ffdd68";ctx.font="bold 30px monospace";ctx.textAlign="right";ctx.fillText(`${combo} HIT`,900,76);}ctx.restore();
-  ctx.fillStyle="#09090bd9";ctx.fillRect(0,0,w,62);ctx.fillRect(0,h-58,w,58);ctx.fillStyle="#f7d45d";ctx.font="bold 25px sans-serif";ctx.textAlign="center";ctx.fillText(t<.65?"하씨: 뭐하는거야?":t<3.55?"하씨 · 순간이동 난타":"하씨 · 마무리 날아차기!",w/2,40);
-  if(t>=3.86){ctx.fillStyle="#ff6259";ctx.font="bold 44px monospace";ctx.fillText("RING OUT!",w/2,h-18);}else{ctx.fillStyle="#ddd6c7";ctx.font="bold 15px sans-serif";ctx.fillText(t<3.55?"임씨는 가드 자세로 연속 공격을 버티고 있다...":"가드를 뚫은 날아차기가 임씨를 화면 밖으로 날린다!",w/2,h-23);}ctx.textAlign="left";
+  ctx.save();if(hit>.35)ctx.translate((Math.random()-.5)*hit*10,(Math.random()-.5)*hit*8);const teleports=[[305,350],[695,350],[500,220],[360,270],[640,275],[430,405],[590,405]];
+  if(barrage){const spot=teleports[(combo-1)%teleports.length],dx=guardX-spot[0],dy=guardY-spot[1],distance=Math.hypot(dx,dy)||1,lunge=hit*64,hx=spot[0]+dx/distance*lunge,hy=spot[1]+dy/distance*lunge,facing=dx>=0?1:-1;for(let i=2;i>=1;i--){const ghost=teleports[(combo-1-i+teleports.length*2)%teleports.length];drawHaAction(ghost[0],ghost[1],phase,0,guardX>=ghost[0]?1:-1,.08*i);}drawHaAction(hx,hy,phase,0,facing,1);drawGuardingIm(guardX,guardY,0,hit);if(hit>.28)drawCutsceneImpact(guardX,guardY-8,hit);ctx.fillStyle="#ffdd68";ctx.font="bold 30px monospace";ctx.textAlign="right";ctx.fillText(`${combo} HIT`,900,76);}
+  else if(kickProgress>0){const eased=1-Math.pow(1-kickProgress,3),hx=125+(470-125)*eased,hy=355-Math.sin(kickProgress*Math.PI)*88;ctx.globalAlpha=.12;drawHaAction(hx-90,hy+18,kickProgress,Math.max(.2,kickProgress),1,.35);ctx.globalAlpha=1;drawHaAction(hx,hy,kickProgress,kickProgress,1,1);const contact=Math.max(0,(kickProgress-.76)/.24),imX=launch?guardX+launch*560:guardX,imY=launch?guardY-launch*115:guardY;drawGuardingIm(imX,imY,launch,contact);if(contact>0)drawCutsceneImpact(guardX,guardY-5,contact);}
+  else{drawHaAction(250,350,t/.62,0,1,1);drawGuardingIm(guardX,guardY,0,0);}ctx.restore();
+  ctx.fillStyle="#09090bd9";ctx.fillRect(0,0,w,62);ctx.fillRect(0,h-58,w,58);ctx.fillStyle="#f7d45d";ctx.font="bold 25px sans-serif";ctx.textAlign="center";ctx.fillText(t<.62?"하씨: 뭐하는거야?":t<3.5?"하씨 · 순간이동 난타":"하씨 · 마무리 날아차기!",w/2,40);if(t>=4.04){ctx.fillStyle="#ff6259";ctx.font="bold 44px monospace";ctx.fillText("RING OUT!",w/2,h-18);}else{ctx.fillStyle="#ddd6c7";ctx.font="bold 15px sans-serif";ctx.fillText(t<3.5?"임씨는 팔을 모아 가드하지만 하씨의 주먹이 연속으로 파고든다...":"하씨가 도약해 가드를 뚫는 날아차기를 날린다!",w/2,h-23);}ctx.textAlign="left";
 }
 
 function drawCommuteHazards(){
