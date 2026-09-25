@@ -81,7 +81,7 @@ const questGroups=[
 const hazards=[
   {id:"yang",name:"양씨",x:18,y:13,color:"#d76565",icon:"양",kind:"chase",range:150,cooldown:0},
   {id:"kang",name:"강씨",x:50,y:27,color:"#795b9a",icon:"강",kind:"mental",range:300,cooldown:0},
-  {id:"seo",name:"서씨",x:38,y:29,color:"#e19042",icon:"서",kind:"race",range:56,cooldown:0},
+  {id:"seo",name:"서씨",x:38,y:29,color:"#e19042",icon:"서",kind:"race",range:100,cooldown:0},
   {id:"ha",name:"하씨",x:84,y:29,color:"#a33e4c",icon:"하",kind:"chaseHard",range:175,cooldown:0},
   {id:"yook",name:"육씨",x:70,y:55,color:"#66804e",icon:"육",kind:"fart",range:0,cooldown:0},
   {id:"jung",name:"정영현",x:103,y:72,color:"#427e99",icon:"정",kind:"birds",range:190,cooldown:0},
@@ -280,6 +280,7 @@ function updateHazards(dt){
     if(h.defeated)return;
     h.cooldown=Math.max(0,h.cooldown-dt);h.attackCooldown=Math.max(0,(h.attackCooldown||0)-dt);h.rageDelay=Math.max(0,(h.rageDelay||0)-dt);h.hitPause=Math.max(0,(h.hitPause||0)-dt);const d=Math.hypot(px-h.x*TILE,py-h.y*TILE);
     if(h.returning){const home=hazardStarts[i],homeDistance=Math.hypot(h.x-home.x,h.y-home.y);h.returnTime=(h.returnTime||0)+dt;if(homeDistance<.2||h.returnTime>8){h.x=home.x;h.y=home.y;delete h.returning;delete h.returnTime;}else moveActor(h,home.x*TILE,home.y*TILE,dt,145);return;}
+    if(h.kind==="race"){const home=hazardStarts[i];h.patrolDirection=h.patrolDirection||1;const patrolX=home.x+h.patrolDirection*4;moveActor(h,patrolX*TILE,home.y*TILE,dt,120);if(Math.abs(h.x-patrolX)<.25)h.patrolDirection*=-1;const raceDistance=Math.hypot(px-h.x*TILE,py-h.y*TILE);if(h.cooldown<=0&&!challenge&&!activeEntity&&raceDistance<100)startHazardChallenge(h);return;}
     if(h.rage||h.attached){if(h.rageDelay>0)return;updateRageHazard(h,d,dt,px,py);return;}
     if(h.kind==="fight"){if(h.cooldown<=0&&!challenge&&!activeEntity&&d<h.range){moveActor(h,px,py,dt,260);if(d<35)startVillainFight(h);}return;}
     if(h.kind==="quiz"){if(h.cooldown<=0&&!challenge&&!activeEntity&&d<h.range){moveActor(h,px,py,dt,275);if(d<34)startHazardChallenge(h);}return;}
@@ -294,7 +295,6 @@ function updateHazards(dt){
     if(h.kind==="chaseHard"&&d<34){stun=1.1;h.cooldown=8;const dx=(px-h.x*TILE)/(d||1),dy=(py-h.y*TILE)/(d||1);tryMove(dx*55,dy*55);showToast("하씨: 뭐하는거야! 3연속 옆구리 공격!");}
     if(h.kind==="mental"&&d<h.range){h.cooldown=10;startMentalAttack();}
     if(h.kind==="confuse"&&d<35){confused=3;h.cooldown=10;showToast("봉씨 때문에 방향 감각이 뒤집혔다!");}
-    if(h.kind==="race"&&d<h.range&&!challenge&&!activeEntity)startHazardChallenge(h);
   });
   fartTrails.forEach(t=>t.time-=dt);while(fartTrails[0]&&fartTrails[0].time<=0)fartTrails.shift();
   droppings.forEach(d=>{d.vy+=18*dt;d.y+=d.vy*dt;if(Math.hypot(px-d.x*TILE,py-d.y*TILE)<25){slow=3;d.hit=true;showToast("새똥을 맞아 발걸음이 느려졌다!");}});for(let i=droppings.length-1;i>=0;i--)if(droppings[i].hit||droppings[i].y>MAP_H)droppings.splice(i,1);
@@ -375,13 +375,21 @@ function drawHitEffects(){
 function drawCutsceneFighter(x,y,color,label,pose=0){
   const arm=pose%2?18:8,leg=pose%3?5:15;ctx.fillStyle="#0007";ctx.fillRect(x-24,y+42,48,9);ctx.fillStyle=color;ctx.fillRect(x-17,y-12,34,42);ctx.fillRect(x-27-arm,y-7,28+arm,11);ctx.fillRect(x+1,y-7,28+arm,11);ctx.fillStyle="#e4bb93";ctx.fillRect(x-13,y-35,26,24);ctx.fillStyle="#252323";ctx.fillRect(x-15,y-38,30,8);ctx.fillStyle=color;ctx.fillRect(x-16,y+28,12,28+leg);ctx.fillRect(x+4,y+28,12,43-leg);ctx.fillStyle="#fff";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.fillText(label,x,y+69);
 }
+function drawGuardingIm(x,y,launch=0,hit=false){
+  ctx.save();ctx.translate(x,y);if(launch)ctx.rotate(launch*7);ctx.fillStyle="#0007";ctx.fillRect(-25,44,50,9);ctx.fillStyle="#2c3541";ctx.fillRect(-15,27,12,30);ctx.fillRect(3,27,12,30);ctx.fillStyle="#4f7295";ctx.fillRect(-19,-13,38,42);ctx.fillStyle="#e4bb93";ctx.fillRect(-14,-38,28,25);ctx.fillStyle="#252525";ctx.fillRect(-16,-41,32,8);
+  if(!launch){ctx.fillStyle="#f2c14e";ctx.fillRect(-24,-5,29,10);ctx.fillRect(-5,-16,10,31);ctx.fillRect(5,-5,29,10);ctx.fillStyle="#d8e4e8";ctx.fillRect(-10,-10,20,20);}else{ctx.fillStyle="#e4bb93";ctx.fillRect(-28,-5,13,11);ctx.fillRect(15,-5,13,11);}if(hit){ctx.fillStyle="#fff2a2";ctx.fillRect(-31,-20,9,9);ctx.fillRect(23,-27,7,7);}ctx.fillStyle="#fff";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.fillText("임씨",0,75);ctx.restore();
+}
 function drawHaCutscene(){
-  const t=haCutscene.time,w=canvas.width,h=canvas.height,combo=Math.max(0,Math.min(14,Math.floor((t-.55)/.2)+1)),launch=Math.max(0,t-3.45),impact=combo>0&&t<3.45;
+  const t=haCutscene.time,w=canvas.width,h=canvas.height,combo=Math.max(0,Math.min(16,Math.floor((t-.6)/.18)+1)),barrage=combo>0&&t<3.55,kick=Math.max(0,t-3.5),launch=Math.max(0,t-3.86);
   ctx.fillStyle="#17131f";ctx.fillRect(0,0,w,h);for(let y=0;y<h;y+=32){ctx.fillStyle=y%64===0?"#272035":"#211a2c";ctx.fillRect(0,y,w,32);}ctx.fillStyle="#40344f";ctx.fillRect(0,390,w,186);ctx.fillStyle="#6f5369";for(let x=0;x<w;x+=48)ctx.fillRect(x,390,32,8);
-  ctx.save();if(impact)ctx.translate((Math.random()-.5)*10,(Math.random()-.5)*8);drawCutsceneFighter(170,350,"#b54646","붉은 파이터",combo);drawCutsceneFighter(325,350,"#3f73b8","푸른 파이터",combo+1);drawCutsceneFighter(480,350,"#c18a35","하씨",combo+2);
-  const imX=launch?650+launch*410:650+(impact?Math.sin(combo*4)*12:0),imY=launch?350-launch*105:350;ctx.save();ctx.translate(imX,imY);if(launch)ctx.rotate(launch*7);drawCutsceneFighter(0,0,"#4f7295","임씨",combo);ctx.restore();
-  if(impact){const colors=["#ffcf53","#67d7ff","#ff6e64"],skills=["파동 펀치!","회전 발차기!","승천 어퍼!"];ctx.fillStyle=colors[combo%3];const bx=620+(combo%2)*28,by=305-(combo%3)*18;ctx.fillRect(bx-34,by-5,68,10);ctx.fillRect(bx-5,by-34,10,68);ctx.fillStyle="#fff8d2";ctx.font="bold 22px sans-serif";ctx.textAlign="center";ctx.fillText(skills[combo%3],590,145);ctx.fillStyle="#ffdd68";ctx.font="bold 30px monospace";ctx.textAlign="right";ctx.fillText(`${combo} HIT`,900,75);}ctx.restore();
-  ctx.fillStyle="#09090bd9";ctx.fillRect(0,0,w,62);ctx.fillRect(0,h-58,w,58);ctx.fillStyle="#f7d45d";ctx.font="bold 25px sans-serif";ctx.textAlign="center";ctx.fillText(t<.55?"하씨: 뭐하는거야?":"골목 파이터즈 · 필살기 연계",w/2,40);if(t>=3.45){ctx.fillStyle="#ff6259";ctx.font="bold 44px monospace";ctx.fillText("RING OUT!",w/2,h-18);}else{ctx.fillStyle="#ddd6c7";ctx.font="bold 15px sans-serif";ctx.fillText("임씨는 반격할 틈도 없이 마구 얻어맞고 있다...",w/2,h-23);}ctx.textAlign="left";
+  ctx.save();if(barrage)ctx.translate((Math.random()-.5)*12,(Math.random()-.5)*9);const guardX=500,guardY=350,teleports=[[305,350],[695,350],[500,220],[360,270],[640,275],[430,400],[590,400]],spot=teleports[combo%teleports.length];
+  if(barrage){ctx.globalAlpha=.18;for(let i=1;i<=3;i++){const ghost=teleports[(combo-i+teleports.length)%teleports.length];drawCutsceneFighter(ghost[0],ghost[1],"#a33e4c","",combo-i);}ctx.globalAlpha=1;drawCutsceneFighter(spot[0],spot[1],"#a33e4c","하씨",combo);ctx.fillStyle="#ff735f";ctx.fillRect(guardX-42,guardY-8,84,12);ctx.fillRect(guardX-6,guardY-48,12,88);}
+  else if(kick>0){const hx=Math.min(470,120+kick*520),hy=330-kick*18;ctx.save();ctx.translate(hx,hy);ctx.rotate(-.12);drawCutsceneFighter(0,0,"#a33e4c","하씨",2);ctx.fillStyle="#e4bb93";ctx.fillRect(15,-5,95,15);ctx.fillStyle="#a33e4c";ctx.fillRect(14,-9,73,23);ctx.restore();}
+  else drawCutsceneFighter(250,350,"#a33e4c","하씨",0);
+  const imX=launch?guardX+launch*520:guardX,imY=launch?guardY-launch*105:guardY;drawGuardingIm(imX,imY,launch,barrage||kick>.55);
+  if(barrage){ctx.fillStyle="#fff1a6";ctx.font="bold 24px sans-serif";ctx.textAlign="center";ctx.fillText(combo%2?"퍽!":"쾅!",guardX+(combo%3-1)*42,235+(combo%4)*24);ctx.fillStyle="#ffdd68";ctx.font="bold 30px monospace";ctx.textAlign="right";ctx.fillText(`${combo} HIT`,900,76);}ctx.restore();
+  ctx.fillStyle="#09090bd9";ctx.fillRect(0,0,w,62);ctx.fillRect(0,h-58,w,58);ctx.fillStyle="#f7d45d";ctx.font="bold 25px sans-serif";ctx.textAlign="center";ctx.fillText(t<.65?"하씨: 뭐하는거야?":t<3.55?"하씨 · 순간이동 난타":"하씨 · 마무리 날아차기!",w/2,40);
+  if(t>=3.86){ctx.fillStyle="#ff6259";ctx.font="bold 44px monospace";ctx.fillText("RING OUT!",w/2,h-18);}else{ctx.fillStyle="#ddd6c7";ctx.font="bold 15px sans-serif";ctx.fillText(t<3.55?"임씨는 가드 자세로 연속 공격을 버티고 있다...":"가드를 뚫은 날아차기가 임씨를 화면 밖으로 날린다!",w/2,h-23);}ctx.textAlign="left";
 }
 
 function drawCommuteHazards(){
@@ -610,7 +618,7 @@ function randomizeBuildingLoot(){
 function resetProgress(){
   met=new Set();startedEvents=new Set();completedEvents=new Set();items=new Set();lootedBuildingItems=new Set();claimedQuestRewards=new Set();parcelDeliveryOrder=[];randomizeBuildingLoot();
   const cat=events.find(e=>e.id==="cat");cat.x=66.2;cat.y=15.8;
-  hazards.forEach((h,i)=>{h.x=hazardStarts[i].x;h.y=hazardStarts[i].y;h.cooldown=0;delete h.wander;delete h.drop;delete h.rage;delete h.rude;delete h.rageHits;delete h.smashHits;delete h.rageDelay;delete h.hitPause;delete h.returning;delete h.returnTime;delete h.attackCooldown;delete h.questionAsked;delete h.questionStage;delete h.requiredSmashes;delete h.yangHits;delete h.attached;delete h.defeated;});
+  hazards.forEach((h,i)=>{h.x=hazardStarts[i].x;h.y=hazardStarts[i].y;h.cooldown=0;delete h.wander;delete h.drop;delete h.rage;delete h.rude;delete h.rageHits;delete h.smashHits;delete h.rageDelay;delete h.hitPause;delete h.returning;delete h.returnTime;delete h.attackCooldown;delete h.questionAsked;delete h.questionStage;delete h.requiredSmashes;delete h.yangHits;delete h.patrolDirection;delete h.attached;delete h.defeated;});
   sewers.forEach(s=>delete s.escaped);fartTrails.length=0;droppings.length=0;hitEffects.length=0;keys.clear();activeEntity=null;challenge=null;armorSwapItem=null;kangQuestionTarget=null;bossQuestionActive=false;haCutscene=null;ui.dialogue.classList.add("hidden");ui.danger.classList.add("hidden");hideChallenge();ui.mental.replaceChildren();
 }
 
