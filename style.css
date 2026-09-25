@@ -100,6 +100,7 @@ canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; 
 .minimap-legend span { width: 7px; height: 7px; display: inline-block; margin-left: 5px; }
 .me-dot { background: #7dd8ff; }.quest-dot { background: #f2c14e; }
 .minimap-legend .offer-dot { width: auto; height: auto; background: transparent; color: #ff786b; font-weight: 1000; }
+.minimap-legend .claim-dot { width: auto; height: auto; background: transparent; color: #7fe39b; font-weight: 1000; }
 .inventory-bar { position: absolute; left: 50%; bottom: 13px; translate: -50% 0; z-index: 5; display: flex; gap: 5px; }
 .inventory-slot { position: relative; width: 82px; height: 49px; padding: 6px 5px 4px; border: 2px solid #101210; background: #222724e8; color: #eee5d1; font: inherit; font-size: 9px; text-align: center; }
 button.inventory-slot { cursor: pointer; }
