@@ -91,7 +91,16 @@ const hazards=[
 ];
 const hazardStarts=hazards.map(h=>({x:h.x,y:h.y}));
 const attackableIds=new Set(["yang","kang","ha","yook","jung","bong"]);
-const sewers=[{x:28,y:26},{x:99,y:54}], bike={x:20,y:36,taken:false};
+const sewers=[{x:28,y:26},{x:99,y:54}];
+const rideables=[
+  {id:"bike",name:"공공자전거",type:"bike",x:20,y:36,duration:45,speed:1.55,taken:false},
+  {id:"inline",name:"인라인 스케이트",type:"inline",x:120,y:47,duration:55,speed:1.35,taken:false},
+  {id:"board",name:"스케이트보드",type:"board",x:19,y:75,duration:32,speed:1.78,taken:false},
+];
+const roadDebuffs=[
+  ...[[9,12],[48,11],[82,29],[28,59],[73,72],[125,56]].map(([x,y],i)=>({id:`banana${i}`,kind:"banana",x,y,active:true,cooldown:0})),
+  ...[[18,30],[59,28],[89,58],[44,74],[121,27],[56,60]].map(([x,y],i)=>({id:`gum${i}`,kind:"gum",x,y,active:true,cooldown:0})),
+];
 const fartTrails=[],droppings=[],hitEffects=[];
 const quizQuestions=[
   {q:"수열 2, 3, 5, 8, 13 다음 수는?",options:["18","20","21"],answer:"3"},
@@ -107,7 +116,7 @@ const camera={x:0,y:0},keys=new Set();
 let met=new Set(),startedEvents=new Set(),completedEvents=new Set(),items=new Set();
 let claimedQuestRewards=new Set(),parcelDeliveryOrder=[];
 let activeEntity=null,challenge=null,armorSwapItem=null,kangQuestionTarget=null,bossQuestionActive=false,haCutscene=null,dialogueIndex=0,lastTime=performance.now(),toastTimer=0;
-let gameStarted=false,gameEnded=false,elapsed=0,playerName="임씨",stun=0,slow=0,bikeTime=0,confused=0,busBoarded=false;
+let gameStarted=false,gameEnded=false,elapsed=0,playerName="임씨",stun=0,slow=0,rideTime=0,activeRide=null,slipTime=0,slipDX=0,slipDY=0,gumTime=0,confused=0,busBoarded=false;
 let shakeTime=0,mentalEffect=null,inOffice=false,inBuilding=false,bossEncountered=false,currentBuilding=null,currentRoomItems=[];
 let hp=100,equippedArmor=null,healingItems=0,money=0,attackTime=0,attackCooldown=0,yangAttached=0,yookDamageTimer=0;
 let lootedBuildingItems=new Set(),buildingLootTypes=[];
@@ -299,11 +308,16 @@ function updateHazards(dt){
   fartTrails.forEach(t=>t.time-=dt);while(fartTrails[0]&&fartTrails[0].time<=0)fartTrails.shift();
   droppings.forEach(d=>{d.vy+=18*dt;d.y+=d.vy*dt;if(Math.hypot(px-d.x*TILE,py-d.y*TILE)<25){slow=3;d.hit=true;showToast("새똥을 맞아 발걸음이 느려졌다!");}});for(let i=droppings.length-1;i>=0;i--)if(droppings[i].hit||droppings[i].y>MAP_H)droppings.splice(i,1);
   sewers.forEach((s,i)=>{if(!s.escaped&&Math.hypot(px-s.x*TILE,py-s.y*TILE)<25&&!challenge&&!activeEntity)startSewer(i);});
-  if(!bike.taken&&Math.hypot(px-bike.x*TILE,py-bike.y*TILE)<30){bike.taken=true;bikeTime=45;showToast("공공자전거 탑승! 45초 동안 이동 속도 상승");}
+  rideables.forEach(ride=>{if(!ride.taken&&Math.hypot(px-ride.x*TILE,py-ride.y*TILE)<30){ride.taken=true;activeRide=ride;rideTime=ride.duration;showToast(`${ride.name} 탑승! 속도 ${ride.speed.toFixed(2)}배 · ${ride.duration}초`);}});
+}
+
+function updateRoadDebuffs(dt,dx,dy,canTrigger){
+  const px=player.x+player.w/2,py=player.y+player.h/2;
+  roadDebuffs.forEach(obstacle=>{if(!obstacle.active){obstacle.cooldown=Math.max(0,obstacle.cooldown-dt);if(obstacle.cooldown<=0)obstacle.active=true;return;}if(!canTrigger||Math.hypot(px-obstacle.x*TILE,py-obstacle.y*TILE)>=23)return;obstacle.active=false;obstacle.cooldown=18;if(obstacle.kind==="banana"){const length=Math.hypot(dx,dy);if(length){slipDX=dx/length;slipDY=dy/length;}else{const angle=Math.random()*Math.PI*2;slipDX=Math.cos(angle);slipDY=Math.sin(angle);}slipTime=1.6;showToast("바나나를 밟았다! 잠시 방향키를 조절할 수 없다!");}else{gumTime=5;showToast("껌을 밟아 발이 붙었다! 이동속도가 느려진다.");}});
 }
 
 function clockText(){const total=Math.min(540,450+Math.floor(elapsed/GAME_DURATION*90));return`${String(Math.floor(total/60)).padStart(2,"0")}:${String(total%60).padStart(2,"0")}`;}
-function updateClock(){ui.clock.textContent=clockText();ui.condition.textContent=yangAttached>0?"A/D·←/→로 양씨 떼기":stun>0?"움직임 불가":confused>0?"방향 혼란":slow>0?"느려짐":bikeTime>0?`자전거 ${Math.ceil(bikeTime)}초`:"";}
+function updateClock(){ui.clock.textContent=clockText();ui.condition.textContent=yangAttached>0?"A/D·←/→로 양씨 떼기":slipTime>0?`바나나 미끄러짐 ${slipTime.toFixed(1)}초`:gumTime>0?`껌에 붙음 ${Math.ceil(gumTime)}초`:stun>0?"움직임 불가":confused>0?"방향 혼란":slow>0?"느려짐":rideTime>0&&activeRide?`${activeRide.name} ${Math.ceil(rideTime)}초`:"";}
 
 function roomBlockedAt(x,y){const feet=playerFeetAt(x,y);return x<28||y<28||x+player.w>canvas.width-28||y+player.h>canvas.height-28||room.solids.some(s=>rectsOverlap(feet,s));}
 function moveRoomAxis(amount,axis){const dir=Math.sign(amount);let left=Math.abs(amount);while(left>0){const step=Math.min(4,left)*dir,nx=axis==="x"?player.x+step:player.x,ny=axis==="y"?player.y+step:player.y;if(roomBlockedAt(nx,ny))break;player[axis]+=step;left-=Math.abs(step);}}
@@ -321,17 +335,17 @@ function update(dt){
   updateDangerBanner();
   if(haCutscene){updateHaCutscene(dt);return;}
   if(!gameStarted||gameEnded)return;
-  elapsed+=dt;stun=Math.max(0,stun-dt);slow=Math.max(0,slow-dt);bikeTime=Math.max(0,bikeTime-dt);confused=Math.max(0,confused-dt);attackTime=Math.max(0,attackTime-dt);attackCooldown=Math.max(0,attackCooldown-dt);hitEffects.forEach(e=>e.time-=dt);for(let i=hitEffects.length-1;i>=0;i--)if(hitEffects[i].time<=0)hitEffects.splice(i,1);updateMentalAttack(dt);updateClock();
+  elapsed+=dt;stun=Math.max(0,stun-dt);slow=Math.max(0,slow-dt);rideTime=Math.max(0,rideTime-dt);if(rideTime<=0)activeRide=null;slipTime=Math.max(0,slipTime-dt);gumTime=Math.max(0,gumTime-dt);confused=Math.max(0,confused-dt);attackTime=Math.max(0,attackTime-dt);attackCooldown=Math.max(0,attackCooldown-dt);hitEffects.forEach(e=>e.time-=dt);for(let i=hitEffects.length-1;i>=0;i--)if(hitEffects[i].time<=0)hitEffects.splice(i,1);updateMentalAttack(dt);updateClock();
   if(elapsed>=GAME_DURATION){showEnding("지각 엔딩",`${playerName}은 오전 9시까지 회사에 도착하지 못했다.`,"LATE END");return;}
   if(inOffice){updateOffice(dt);return;}
   if(inBuilding){updateBuildingInterior(dt);return;}
   let dx=0,dy=0;
   if(!activeEntity&&!challenge&&stun<=0){
-    if(keys.has("arrowleft")||keys.has("a")){dx--;player.facing="left";}if(keys.has("arrowright")||keys.has("d")){dx++;player.facing="right";}
-    if(keys.has("arrowup")||keys.has("w")){dy--;player.facing="up";}if(keys.has("arrowdown")||keys.has("s")){dy++;player.facing="down";}
-    if(confused>0){dx*=-1;dy*=-1;}if(dx&&dy){dx*=Math.SQRT1_2;dy*=Math.SQRT1_2;}const speed=player.speed*(bikeTime>0?1.55:1)*(slow>0?.52:1)*(yangAttached>0?.42:1);tryMove(dx*speed*dt,dy*speed*dt);
+    if(slipTime>0){dx=slipDX;dy=slipDY;}else{if(keys.has("arrowleft")||keys.has("a")){dx--;player.facing="left";}if(keys.has("arrowright")||keys.has("d")){dx++;player.facing="right";}if(keys.has("arrowup")||keys.has("w")){dy--;player.facing="up";}if(keys.has("arrowdown")||keys.has("s")){dy++;player.facing="down";}}
+    if(confused>0&&slipTime<=0){dx*=-1;dy*=-1;}if(dx&&dy){dx*=Math.SQRT1_2;dy*=Math.SQRT1_2;}const speed=player.speed*(activeRide?activeRide.speed:1)*(slow>0?.52:1)*(gumTime>0?.42:1)*(yangAttached>0?.42:1);tryMove(dx*speed*dt,dy*speed*dt);
   }
   player.moving=Boolean(dx||dy)&&!activeEntity;if(player.moving)player.walk+=dt*11;
+  updateRoadDebuffs(dt,dx,dy,!activeEntity&&!challenge);
   updateCat(dt);updateChallenge(dt);updateHazards(dt);
   const sx=player.x-camera.x,sy=player.y-camera.y;let tx=camera.x,ty=camera.y;
   if(sx<250)tx=player.x-250;else if(sx>710)tx=player.x-710;if(sy<170)ty=player.y-170;else if(sy>390)ty=player.y-390;
@@ -395,7 +409,8 @@ function drawHaCutscene(){
 function drawCommuteHazards(){
   fartTrails.forEach(t=>{ctx.fillStyle=`rgba(112,91,45,${Math.min(.55,t.time/8)})`;ctx.fillRect(t.x*TILE-camera.x-15,t.y*TILE-camera.y-9,30,18);});
   sewers.forEach(s=>{const x=s.x*TILE-camera.x,y=s.y*TILE-camera.y;ctx.fillStyle="#282d2e";ctx.fillRect(x-13,y-8,26,16);ctx.strokeStyle="#596164";ctx.lineWidth=2;for(let i=-8;i<=8;i+=5){ctx.beginPath();ctx.moveTo(x+i,y-7);ctx.lineTo(x+i,y+7);ctx.stroke();}});
-  if(!bike.taken){const x=bike.x*TILE-camera.x,y=bike.y*TILE-camera.y;ctx.strokeStyle="#72c8d5";ctx.lineWidth=3;ctx.beginPath();ctx.arc(x-8,y+6,7,0,Math.PI*2);ctx.arc(x+9,y+6,7,0,Math.PI*2);ctx.moveTo(x-8,y+6);ctx.lineTo(x,y-6);ctx.lineTo(x+9,y+6);ctx.stroke();}
+  rideables.filter(ride=>!ride.taken).forEach(ride=>{const x=ride.x*TILE-camera.x,y=ride.y*TILE-camera.y;if(ride.type==="bike"){ctx.strokeStyle="#72c8d5";ctx.lineWidth=3;ctx.beginPath();ctx.arc(x-8,y+6,7,0,Math.PI*2);ctx.arc(x+9,y+6,7,0,Math.PI*2);ctx.moveTo(x-8,y+6);ctx.lineTo(x,y-6);ctx.lineTo(x+9,y+6);ctx.stroke();}else if(ride.type==="inline"){ctx.fillStyle="#d8e5e8";ctx.fillRect(x-15,y-8,12,10);ctx.fillRect(x+3,y-8,12,10);ctx.fillStyle="#68a6bf";ctx.fillRect(x-12,y-13,9,6);ctx.fillRect(x+6,y-13,9,6);ctx.fillStyle="#282d30";[-12,-6,6,12].forEach(wx=>ctx.fillRect(x+wx-2,y+3,4,4));}else{ctx.fillStyle="#d96b52";ctx.fillRect(x-18,y-5,36,8);ctx.fillStyle="#efc65d";ctx.fillRect(x-12,y-3,24,3);ctx.fillStyle="#25292b";ctx.fillRect(x-14,y+4,6,5);ctx.fillRect(x+8,y+4,6,5);}});
+  roadDebuffs.filter(obstacle=>obstacle.active).forEach(obstacle=>{const x=obstacle.x*TILE-camera.x,y=obstacle.y*TILE-camera.y;if(obstacle.kind==="banana"){ctx.fillStyle="#f5d34f";ctx.fillRect(x-10,y-3,9,5);ctx.fillRect(x-4,y-7,9,6);ctx.fillRect(x+3,y-11,8,6);ctx.fillStyle="#8a6a25";ctx.fillRect(x+9,y-12,3,4);}else{ctx.fillStyle="#ed91b8";ctx.fillRect(x-11,y-5,22,10);ctx.fillRect(x-7,y-9,14,18);ctx.fillStyle="#ffc0d8";ctx.fillRect(x-5,y-6,7,4);}});
   droppings.forEach(d=>{ctx.fillStyle="#f2f0dc";ctx.fillRect(d.x*TILE-camera.x-3,d.y*TILE-camera.y-3,6,7);});
   hazards.forEach(h=>{if(h.defeated)return;const x=h.x*TILE-camera.x,y=h.y*TILE-camera.y;drawBaseCharacter(h.x*TILE,h.y*TILE,h.color,h.icon,false);if(h.id==="bong"&&h.rage){ctx.fillStyle="#8e6e45";ctx.fillRect(x-18,y-10,9,16);ctx.fillRect(x+9,y-10,9,16);ctx.fillStyle="#e8c49f";ctx.fillRect(x-21,y+3,8,8);ctx.fillRect(x+13,y+3,8,8);}if(h.rage||h.attached){ctx.fillStyle="#ed493f";ctx.font="bold 15px sans-serif";ctx.textAlign="center";ctx.fillText(h.rude?"!!!":"!!",x,y-31);}if(h.id==="yang"&&h.rage&&h.rageDelay<=0){ctx.font="bold 11px sans-serif";ctx.fillStyle="#171917e8";ctx.fillRect(x-58,y-58,116,19);ctx.fillStyle="#ffe17a";ctx.textAlign="center";ctx.fillText("이이잉이이잉잉~!",x,y-45);}ctx.fillStyle=h.rage?"#3b1010e8":"#171917cc";ctx.fillRect(x-24,y+14,48,13);ctx.fillStyle="#f4e8cf";ctx.font="bold 9px sans-serif";ctx.textAlign="center";ctx.fillText(h.name,x,y+24);ctx.textAlign="left";});
   drawBusStop();
@@ -460,7 +475,7 @@ function boardBus(){if(money<busStop.fare){showToast(`버스비가 부족하다.
 function drawPrompt(target,label){const x=target.x*TILE-camera.x,y=target.y*TILE-camera.y-42;ctx.fillStyle="#151719e8";ctx.fillRect(x-34,y-12,68,22);ctx.fillStyle="#f6e8bd";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.fillText(`E  ${label}`,x,y+3);ctx.textAlign="left";}
 function drawDoorPrompt(door){const x=door.x-camera.x,y=door.y-camera.y,yook=hazards.find(h=>h.id==="yook");ctx.fillStyle="#151719e8";ctx.fillRect(x-55,y-16,110,23);ctx.fillStyle="#f6e8bd";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.fillText(yook.rage?"E  건물로 피하기":"E  건물 들어가기",x,y);ctx.textAlign="left";}
 function drawBusPrompt(){const x=busStop.x*TILE-camera.x,y=busStop.y*TILE-camera.y+38;ctx.fillStyle="#151719e8";ctx.fillRect(x-73,y-14,146,24);ctx.fillStyle=money>=busStop.fare?"#f6e8bd":"#d9a19b";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.fillText(`E  버스 타기 ₩${busStop.fare.toLocaleString("ko-KR")}`,x,y+2);ctx.textAlign="left";}
-function updateDangerBanner(){const jung=hazards.find(h=>h.id==="jung"),show=gameStarted&&!gameEnded&&!inOffice&&!inBuilding&&jung.rage;if(show)ui.danger.classList.remove("hidden");else ui.danger.classList.add("hidden");}
+function updateDangerBanner(){const jung=hazards.find(h=>h.id==="jung"),yook=hazards.find(h=>h.id==="yook"),active=gameStarted&&!gameEnded&&!inOffice&&!inBuilding,message=yook.rage?"건물로 대피하여 육씨를 따돌리세요!":jung.rage?"도망가서 그로부터 엉덩이를 지키세요!":"";ui.danger.textContent=message;if(active&&message)ui.danger.classList.remove("hidden");else ui.danger.classList.add("hidden");}
 function npcHasUnacceptedMission(npc){const ids=npc.events||[npc.event].filter(Boolean);return ids.length>0&&ids.every(id=>!startedEvents.has(id));}
 function npcHasClaimableReward(npc){const group=questGroups.find(q=>q.npcId===npc.id);return Boolean(group&&group.ids.every(id=>completedEvents.has(id))&&!claimedQuestRewards.has(npc.id));}
 function drawMinimap(){
@@ -619,6 +634,7 @@ function resetProgress(){
   met=new Set();startedEvents=new Set();completedEvents=new Set();items=new Set();lootedBuildingItems=new Set();claimedQuestRewards=new Set();parcelDeliveryOrder=[];randomizeBuildingLoot();
   const cat=events.find(e=>e.id==="cat");cat.x=66.2;cat.y=15.8;
   hazards.forEach((h,i)=>{h.x=hazardStarts[i].x;h.y=hazardStarts[i].y;h.cooldown=0;delete h.wander;delete h.drop;delete h.rage;delete h.rude;delete h.rageHits;delete h.smashHits;delete h.rageDelay;delete h.hitPause;delete h.returning;delete h.returnTime;delete h.attackCooldown;delete h.questionAsked;delete h.questionStage;delete h.requiredSmashes;delete h.yangHits;delete h.patrolDirection;delete h.attached;delete h.defeated;});
+  rideables.forEach(ride=>ride.taken=false);roadDebuffs.forEach(obstacle=>{obstacle.active=true;obstacle.cooldown=0;});activeRide=null;rideTime=slipTime=gumTime=0;slipDX=slipDY=0;
   sewers.forEach(s=>delete s.escaped);fartTrails.length=0;droppings.length=0;hitEffects.length=0;keys.clear();activeEntity=null;challenge=null;armorSwapItem=null;kangQuestionTarget=null;bossQuestionActive=false;haCutscene=null;ui.dialogue.classList.add("hidden");ui.danger.classList.add("hidden");hideChallenge();ui.mental.replaceChildren();
 }
 
@@ -638,7 +654,7 @@ function showBossQuestion(){
 }
 function resolveBossQuestion(correct){if(!bossQuestionActive)return;bossQuestionActive=false;if(correct){bossEncountered=true;gameEnded=false;ui.ending.classList.add("hidden");updateProgress();showToast("상사: ...그래, 일단 가보게.");}else showEnding("회사 밖으로 쫓겨난 엔딩",`상사: 너 누구야?\n${playerName}은 회사 밖으로 쫓겨났다.`,"BAD END");}
 function startGame(){
-  const entered=document.querySelector("#playerName").value.trim();playerName=entered||"임씨";resetProgress();player.x=8*TILE;player.y=12*TILE;elapsed=0;hp=100;equippedArmor=null;healingItems=0;money=0;stun=slow=bikeTime=confused=shakeTime=attackTime=attackCooldown=yangAttached=yookDamageTimer=0;mentalEffect=null;bike.taken=false;busBoarded=false;inOffice=false;inBuilding=false;currentBuilding=null;currentRoomItems=[];bossEncountered=false;gameEnded=false;gameStarted=true;ui.start.classList.add("hidden");ui.ending.classList.add("hidden");updateHpHud();updateClock();updateProgress();showToast(`${playerName}, 오전 7시 30분 출발! 미션으로 버스비를 벌어 9시까지 출근하자.`);
+  const entered=document.querySelector("#playerName").value.trim();playerName=entered||"임씨";resetProgress();player.x=8*TILE;player.y=12*TILE;elapsed=0;hp=100;equippedArmor=null;healingItems=0;money=0;stun=slow=rideTime=slipTime=gumTime=confused=shakeTime=attackTime=attackCooldown=yangAttached=yookDamageTimer=0;activeRide=null;slipDX=slipDY=0;mentalEffect=null;busBoarded=false;inOffice=false;inBuilding=false;currentBuilding=null;currentRoomItems=[];bossEncountered=false;gameEnded=false;gameStarted=true;ui.start.classList.add("hidden");ui.ending.classList.add("hidden");updateHpHud();updateClock();updateProgress();showToast(`${playerName}, 오전 7시 30분 출발! 미션으로 버스비를 벌어 9시까지 출근하자.`);
 }
 
 addEventListener("keydown",e=>{const key=e.key.toLowerCase();if(["arrowup","arrowdown","arrowleft","arrowright"," "].includes(key))e.preventDefault();if(armorSwapItem&&!e.repeat){if(key==="1")resolveArmorSwap(true);else if(key==="2")resolveArmorSwap(false);return;}if(kangQuestionTarget&&!e.repeat){if(key==="1")resolveKangQuestion(true);else if(key==="2")resolveKangQuestion(false);return;}if(bossQuestionActive&&!e.repeat){if(["1","2","3","4"].includes(key))resolveBossQuestion(key==="1");return;}if(challenge){handleChallengeKey(key,e.repeat);return;}if(!gameStarted||gameEnded)return;if(key==="1"&&!e.repeat){useHealingItem();return;}if(key===" "&&!e.repeat){playerAttack();return;}if(key==="e"&&!e.repeat)activeEntity?nextDialogue():interact();keys.add(key);});
