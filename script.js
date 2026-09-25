@@ -81,7 +81,7 @@ const questGroups=[
 const hazards=[
   {id:"yang",name:"양씨",x:18,y:13,color:"#d76565",icon:"양",kind:"chase",range:150,cooldown:0},
   {id:"kang",name:"강씨",x:50,y:27,color:"#795b9a",icon:"강",kind:"mental",range:300,cooldown:0},
-  {id:"seo",name:"서씨",x:38,y:29,color:"#e19042",icon:"서",kind:"race",range:100,cooldown:0},
+  {id:"seo",name:"서씨",x:38,y:29,color:"#e19042",icon:"서",kind:"race",range:50,cooldown:0},
   {id:"ha",name:"하씨",x:84,y:29,color:"#a33e4c",icon:"하",kind:"chaseHard",range:175,cooldown:0},
   {id:"yook",name:"육씨",x:70,y:55,color:"#66804e",icon:"육",kind:"fart",range:0,cooldown:0},
   {id:"jung",name:"정영현",x:103,y:72,color:"#427e99",icon:"정",kind:"birds",range:190,cooldown:0},
@@ -90,7 +90,7 @@ const hazards=[
   {id:"quiz",name:"문제 악당",x:88,y:76,color:"#33434e",icon:"?",kind:"quiz",range:100,cooldown:0},
 ];
 const hazardStarts=hazards.map(h=>({x:h.x,y:h.y}));
-const attackableIds=new Set(["yang","kang","ha","yook","jung","bong"]);
+const attackableIds=new Set(["yang","kang","seo","ha","yook","jung","bong"]);
 const sewers=[{x:28,y:26},{x:99,y:54}];
 const rideables=[
   {id:"bike",name:"공공자전거",type:"bike",x:20,y:36,duration:45,speed:1.55,taken:false},
@@ -256,11 +256,10 @@ function updateHaCutscene(dt){
 function playerAttack(){
   if(inOffice||inBuilding||activeEntity||challenge||gameEnded||attackCooldown>0)return;const px=player.x+player.w/2,py=player.y+player.h/2;attackTime=.18;attackCooldown=.22;
   const targets=hazards.filter(h=>attackableIds.has(h.id)).map(h=>({h,d:Math.hypot(px-h.x*TILE,py-h.y*TILE),range:h.id==="kang"&&h.rage?105:58})).filter(t=>t.d<t.range).sort((a,b)=>a.d-b.d);if(!targets.length)return;
-  const h=targets[0].h;attackCooldown=h.id==="kang"?.12:.3;hitEffects.push({x:h.x*TILE,y:h.y*TILE,time:.42,max:.42});if(h.id==="ha"){startHaCutscene(h);return;}h.rage=true;h.attackCooldown=0;
+  const h=targets[0].h,wasRaging=Boolean(h.rage);attackCooldown=h.id==="kang"?.12:.3;hitEffects.push({x:h.x*TILE,y:h.y*TILE,time:.42,max:.42});if(h.id==="ha"){startHaCutscene(h);return;}if(h.id==="seo"){h.sad=true;h.rage=false;showToast("서씨가 그 자리에 주저앉아 울기 시작했다... ㅠㅠ");return;}h.rage=true;h.attackCooldown=0;
   if(h.id==="kang"){
     if(h.rude)return;
-    h.rageHits=Math.min(2,(h.rageHits||0)+1);
-    if(h.rageHits>=2){showKangQuestion(h);return;}
+    if(!wasRaging){h.smashHits=0;h.requiredSmashes=2;}
     h.attackCooldown=.7;return;
   }
   if(h.id==="yang"){h.yangHits=(h.yangHits||0)+1;delete h.rageDelay;if(h.yangHits>1)showToast("양씨가 더 단단히 달라붙을 기세다!");}
@@ -289,7 +288,7 @@ function updateHazards(dt){
     if(h.defeated)return;
     h.cooldown=Math.max(0,h.cooldown-dt);h.attackCooldown=Math.max(0,(h.attackCooldown||0)-dt);h.rageDelay=Math.max(0,(h.rageDelay||0)-dt);h.hitPause=Math.max(0,(h.hitPause||0)-dt);const d=Math.hypot(px-h.x*TILE,py-h.y*TILE);
     if(h.returning){const home=hazardStarts[i],homeDistance=Math.hypot(h.x-home.x,h.y-home.y);h.returnTime=(h.returnTime||0)+dt;if(homeDistance<.2||h.returnTime>8){h.x=home.x;h.y=home.y;delete h.returning;delete h.returnTime;}else moveActor(h,home.x*TILE,home.y*TILE,dt,145);return;}
-    if(h.kind==="race"){const home=hazardStarts[i];h.patrolDirection=h.patrolDirection||1;const patrolX=home.x+h.patrolDirection*4;moveActor(h,patrolX*TILE,home.y*TILE,dt,120);if(Math.abs(h.x-patrolX)<.25)h.patrolDirection*=-1;const raceDistance=Math.hypot(px-h.x*TILE,py-h.y*TILE);if(h.cooldown<=0&&!challenge&&!activeEntity&&raceDistance<100)startHazardChallenge(h);return;}
+    if(h.kind==="race"){if(h.sad)return;const home=hazardStarts[i];h.patrolDirection=h.patrolDirection||1;const patrolX=home.x+h.patrolDirection*4;moveActor(h,patrolX*TILE,home.y*TILE,dt,120);if(Math.abs(h.x-patrolX)<.25)h.patrolDirection*=-1;const raceDistance=Math.hypot(px-h.x*TILE,py-h.y*TILE);if(h.cooldown<=0&&!challenge&&!activeEntity&&raceDistance<50)startHazardChallenge(h);return;}
     if(h.rage||h.attached){if(h.rageDelay>0)return;updateRageHazard(h,d,dt,px,py);return;}
     if(h.kind==="fight"){if(h.cooldown<=0&&!challenge&&!activeEntity&&d<h.range){moveActor(h,px,py,dt,260);if(d<35)startVillainFight(h);}return;}
     if(h.kind==="quiz"){if(h.cooldown<=0&&!challenge&&!activeEntity&&d<h.range){moveActor(h,px,py,dt,275);if(d<34)startHazardChallenge(h);}return;}
@@ -411,13 +410,15 @@ function drawHaCutscene(){
   ctx.fillStyle="#09090bd9";ctx.fillRect(0,0,w,62);ctx.fillRect(0,h-58,w,58);ctx.fillStyle="#f7d45d";ctx.font="bold 25px sans-serif";ctx.textAlign="center";ctx.fillText(t<.62?"하씨: 뭐하는거야?":t<3.5?"하씨 · 순간이동 난타":"하씨 · 마무리 날아차기!",w/2,40);if(t>=4.04){ctx.fillStyle="#ff6259";ctx.font="bold 44px monospace";ctx.fillText("RING OUT!",w/2,h-18);}else{ctx.fillStyle="#ddd6c7";ctx.font="bold 15px sans-serif";ctx.fillText(t<3.5?"임씨는 팔을 모아 가드하지만 하씨의 주먹이 연속으로 파고든다...":"하씨가 도약해 가드를 뚫는 날아차기를 날린다!",w/2,h-23);}ctx.textAlign="left";
 }
 
+function drawCryingSeo(h){const x=h.x*TILE-camera.x,y=h.y*TILE-camera.y;ctx.fillStyle="#0005";ctx.fillRect(x-18,y+12,36,7);ctx.fillStyle="#42484d";ctx.fillRect(x-20,y+5,17,8);ctx.fillRect(x+3,y+5,17,8);ctx.fillStyle=h.color;ctx.fillRect(x-13,y-8,26,18);ctx.fillStyle="#e8c49f";ctx.fillRect(x-10,y-24,20,17);ctx.fillStyle="#302923";ctx.fillRect(x-11,y-27,22,6);ctx.fillStyle="#70c9ea";ctx.fillRect(x-8,y-14,4,12);ctx.fillRect(x+5,y-14,4,12);ctx.fillStyle="#171917e8";ctx.fillRect(x-32,y-51,64,19);ctx.fillStyle="#9ee7ff";ctx.font="bold 12px sans-serif";ctx.textAlign="center";ctx.fillText("ㅠㅠ",x,y-37);ctx.fillStyle="#f4e8cf";ctx.font="bold 9px sans-serif";ctx.fillText(h.name,x,y+25);ctx.textAlign="left";}
+
 function drawCommuteHazards(){
   fartTrails.forEach(t=>{ctx.fillStyle=`rgba(112,91,45,${Math.min(.55,t.time/8)})`;ctx.fillRect(t.x*TILE-camera.x-15,t.y*TILE-camera.y-9,30,18);});
   sewers.forEach(s=>{const x=s.x*TILE-camera.x,y=s.y*TILE-camera.y;ctx.fillStyle="#282d2e";ctx.fillRect(x-13,y-8,26,16);ctx.strokeStyle="#596164";ctx.lineWidth=2;for(let i=-8;i<=8;i+=5){ctx.beginPath();ctx.moveTo(x+i,y-7);ctx.lineTo(x+i,y+7);ctx.stroke();}});
   rideables.filter(ride=>!ride.taken).forEach(ride=>{const x=ride.x*TILE-camera.x,y=ride.y*TILE-camera.y;if(ride.type==="bike"){ctx.strokeStyle="#72c8d5";ctx.lineWidth=3;ctx.beginPath();ctx.arc(x-8,y+6,7,0,Math.PI*2);ctx.arc(x+9,y+6,7,0,Math.PI*2);ctx.moveTo(x-8,y+6);ctx.lineTo(x,y-6);ctx.lineTo(x+9,y+6);ctx.stroke();}else if(ride.type==="inline"){ctx.fillStyle="#d8e5e8";ctx.fillRect(x-15,y-8,12,10);ctx.fillRect(x+3,y-8,12,10);ctx.fillStyle="#68a6bf";ctx.fillRect(x-12,y-13,9,6);ctx.fillRect(x+6,y-13,9,6);ctx.fillStyle="#282d30";[-12,-6,6,12].forEach(wx=>ctx.fillRect(x+wx-2,y+3,4,4));}else{ctx.fillStyle="#d96b52";ctx.fillRect(x-18,y-5,36,8);ctx.fillStyle="#efc65d";ctx.fillRect(x-12,y-3,24,3);ctx.fillStyle="#25292b";ctx.fillRect(x-14,y+4,6,5);ctx.fillRect(x+8,y+4,6,5);}});
   roadDebuffs.filter(obstacle=>obstacle.active).forEach(obstacle=>{const x=obstacle.x*TILE-camera.x,y=obstacle.y*TILE-camera.y;if(obstacle.kind==="banana"){ctx.fillStyle="#f5d34f";ctx.fillRect(x-10,y-3,9,5);ctx.fillRect(x-4,y-7,9,6);ctx.fillRect(x+3,y-11,8,6);ctx.fillStyle="#8a6a25";ctx.fillRect(x+9,y-12,3,4);}else{ctx.fillStyle="#ed91b8";ctx.fillRect(x-11,y-5,22,10);ctx.fillRect(x-7,y-9,14,18);ctx.fillStyle="#ffc0d8";ctx.fillRect(x-5,y-6,7,4);}});
   droppings.forEach(d=>{ctx.fillStyle="#f2f0dc";ctx.fillRect(d.x*TILE-camera.x-3,d.y*TILE-camera.y-3,6,7);});
-  hazards.forEach(h=>{if(h.defeated)return;const x=h.x*TILE-camera.x,y=h.y*TILE-camera.y;drawBaseCharacter(h.x*TILE,h.y*TILE,h.color,h.icon,false);if(h.id==="bong"&&h.rage){ctx.fillStyle="#8e6e45";ctx.fillRect(x-18,y-10,9,16);ctx.fillRect(x+9,y-10,9,16);ctx.fillStyle="#e8c49f";ctx.fillRect(x-21,y+3,8,8);ctx.fillRect(x+13,y+3,8,8);}if(h.rage||h.attached){ctx.fillStyle="#ed493f";ctx.font="bold 15px sans-serif";ctx.textAlign="center";ctx.fillText(h.rude?"!!!":"!!",x,y-31);}if(h.id==="yang"&&h.rage&&h.rageDelay<=0){ctx.font="bold 11px sans-serif";ctx.fillStyle="#171917e8";ctx.fillRect(x-58,y-58,116,19);ctx.fillStyle="#ffe17a";ctx.textAlign="center";ctx.fillText("이이잉이이잉잉~!",x,y-45);}ctx.fillStyle=h.rage?"#3b1010e8":"#171917cc";ctx.fillRect(x-24,y+14,48,13);ctx.fillStyle="#f4e8cf";ctx.font="bold 9px sans-serif";ctx.textAlign="center";ctx.fillText(h.name,x,y+24);ctx.textAlign="left";});
+  hazards.forEach(h=>{if(h.defeated)return;if(h.id==="seo"&&h.sad){drawCryingSeo(h);return;}const x=h.x*TILE-camera.x,y=h.y*TILE-camera.y;drawBaseCharacter(h.x*TILE,h.y*TILE,h.color,h.icon,false);if(h.id==="bong"&&h.rage){ctx.fillStyle="#8e6e45";ctx.fillRect(x-18,y-10,9,16);ctx.fillRect(x+9,y-10,9,16);ctx.fillStyle="#e8c49f";ctx.fillRect(x-21,y+3,8,8);ctx.fillRect(x+13,y+3,8,8);}if(h.rage||h.attached){ctx.fillStyle="#ed493f";ctx.font="bold 15px sans-serif";ctx.textAlign="center";ctx.fillText(h.rude?"!!!":"!!",x,y-31);}if(h.id==="yang"&&h.rage&&h.rageDelay<=0){ctx.font="bold 11px sans-serif";ctx.fillStyle="#171917e8";ctx.fillRect(x-58,y-58,116,19);ctx.fillStyle="#ffe17a";ctx.textAlign="center";ctx.fillText("이이잉이이잉잉~!",x,y-45);}ctx.fillStyle=h.rage?"#3b1010e8":"#171917cc";ctx.fillRect(x-24,y+14,48,13);ctx.fillStyle="#f4e8cf";ctx.font="bold 9px sans-serif";ctx.textAlign="center";ctx.fillText(h.name,x,y+24);ctx.textAlign="left";});
   drawBusStop();
 }
 
@@ -480,7 +481,7 @@ function boardBus(){if(money<busStop.fare){showToast(`버스비가 부족하다.
 function drawPrompt(target,label){const x=target.x*TILE-camera.x,y=target.y*TILE-camera.y-42;ctx.fillStyle="#151719e8";ctx.fillRect(x-34,y-12,68,22);ctx.fillStyle="#f6e8bd";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.fillText(`E  ${label}`,x,y+3);ctx.textAlign="left";}
 function drawDoorPrompt(door){const x=door.x-camera.x,y=door.y-camera.y,yook=hazards.find(h=>h.id==="yook");ctx.fillStyle="#151719e8";ctx.fillRect(x-55,y-16,110,23);ctx.fillStyle="#f6e8bd";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.fillText(yook.rage?"E  건물로 피하기":"E  건물 들어가기",x,y);ctx.textAlign="left";}
 function drawBusPrompt(){const x=busStop.x*TILE-camera.x,y=busStop.y*TILE-camera.y+38;ctx.fillStyle="#151719e8";ctx.fillRect(x-73,y-14,146,24);ctx.fillStyle=money>=busStop.fare?"#f6e8bd":"#d9a19b";ctx.font="bold 11px sans-serif";ctx.textAlign="center";ctx.fillText(`E  버스 타기 ₩${busStop.fare.toLocaleString("ko-KR")}`,x,y+2);ctx.textAlign="left";}
-function updateDangerBanner(){const jung=hazards.find(h=>h.id==="jung"),yook=hazards.find(h=>h.id==="yook"),active=gameStarted&&!gameEnded&&!inOffice&&!inBuilding,message=yook.rage?"건물로 대피하여 육씨를 따돌리세요!":jung.rage?"도망가서 그로부터 엉덩이를 지키세요!":"";ui.danger.textContent=message;if(active&&message)ui.danger.classList.remove("hidden");else ui.danger.classList.add("hidden");}
+function updateDangerBanner(){const jung=hazards.find(h=>h.id==="jung"),yook=hazards.find(h=>h.id==="yook"),active=gameStarted&&!gameEnded&&!inOffice&&!inBuilding,birdDistance=Math.hypot(player.x+player.w/2-jung.x*TILE,player.y+player.h/2-jung.y*TILE),birdWarning=!jung.rage&&birdDistance<=jung.range+10,message=yook.rage?"건물로 대피하여 육씨를 따돌리세요!":jung.rage?"도망가서 그로부터 엉덩이를 지키세요!":birdWarning?"새똥이 떨어지니 피하세요!":"";ui.danger.textContent=message;if(active&&message)ui.danger.classList.remove("hidden");else ui.danger.classList.add("hidden");}
 function npcHasUnacceptedMission(npc){const ids=npc.events||[npc.event].filter(Boolean);return ids.length>0&&ids.every(id=>!startedEvents.has(id));}
 function npcHasClaimableReward(npc){const group=questGroups.find(q=>q.npcId===npc.id);return Boolean(group&&group.ids.every(id=>completedEvents.has(id))&&!claimedQuestRewards.has(npc.id));}
 function drawMinimap(){
@@ -638,7 +639,7 @@ function randomizeBuildingLoot(){
 function resetProgress(){
   met=new Set();startedEvents=new Set();completedEvents=new Set();items=new Set();lootedBuildingItems=new Set();claimedQuestRewards=new Set();parcelDeliveryOrder=[];randomizeBuildingLoot();
   const cat=events.find(e=>e.id==="cat");cat.x=66.2;cat.y=15.8;
-  hazards.forEach((h,i)=>{h.x=hazardStarts[i].x;h.y=hazardStarts[i].y;h.cooldown=0;delete h.wander;delete h.drop;delete h.rage;delete h.rude;delete h.rageHits;delete h.smashHits;delete h.rageDelay;delete h.hitPause;delete h.returning;delete h.returnTime;delete h.attackCooldown;delete h.questionAsked;delete h.questionStage;delete h.requiredSmashes;delete h.yangHits;delete h.patrolDirection;delete h.attached;delete h.defeated;});
+  hazards.forEach((h,i)=>{h.x=hazardStarts[i].x;h.y=hazardStarts[i].y;h.cooldown=0;delete h.wander;delete h.drop;delete h.rage;delete h.rude;delete h.rageHits;delete h.smashHits;delete h.rageDelay;delete h.hitPause;delete h.returning;delete h.returnTime;delete h.attackCooldown;delete h.questionAsked;delete h.questionStage;delete h.requiredSmashes;delete h.yangHits;delete h.patrolDirection;delete h.sad;delete h.attached;delete h.defeated;});
   rideables.forEach(ride=>ride.taken=false);roadDebuffs.forEach(obstacle=>{obstacle.active=true;obstacle.cooldown=0;});activeRide=null;rideTime=slipTime=gumTime=0;slipDX=slipDY=0;
   sewers.forEach(s=>delete s.escaped);fartTrails.length=0;droppings.length=0;hitEffects.length=0;keys.clear();activeEntity=null;challenge=null;armorSwapItem=null;kangQuestionTarget=null;bossQuestionActive=false;haCutscene=null;ui.dialogue.classList.add("hidden");ui.danger.classList.add("hidden");hideChallenge();ui.mental.replaceChildren();
 }
