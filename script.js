@@ -297,7 +297,7 @@ function updateHazards(dt){
 }
 
 function clockText(){const total=Math.min(540,450+Math.floor(elapsed/GAME_DURATION*90));return`${String(Math.floor(total/60)).padStart(2,"0")}:${String(total%60).padStart(2,"0")}`;}
-function updateClock(){ui.clock.textContent=clockText();ui.condition.textContent=yangAttached>0?"A/D·←/→로 양씨 떼기":stun>0?"움직임 불가":confused>0?"방향 혼란":slow>0?"느려짐":bikeTime>0?`자전거 ${Math.ceil(bikeTime)}초`:"정상";}
+function updateClock(){ui.clock.textContent=clockText();ui.condition.textContent=yangAttached>0?"A/D·←/→로 양씨 떼기":stun>0?"움직임 불가":confused>0?"방향 혼란":slow>0?"느려짐":bikeTime>0?`자전거 ${Math.ceil(bikeTime)}초`:"";}
 
 function roomBlockedAt(x,y){const feet=playerFeetAt(x,y);return x<28||y<28||x+player.w>canvas.width-28||y+player.h>canvas.height-28||room.solids.some(s=>rectsOverlap(feet,s));}
 function moveRoomAxis(amount,axis){const dir=Math.sign(amount);let left=Math.abs(amount);while(left>0){const step=Math.min(4,left)*dir,nx=axis==="x"?player.x+step:player.x,ny=axis==="y"?player.y+step:player.y;if(roomBlockedAt(nx,ny))break;player[axis]+=step;left-=Math.abs(step);}}
